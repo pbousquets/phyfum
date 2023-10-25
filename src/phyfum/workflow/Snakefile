@@ -4,7 +4,7 @@ import pandas as pd
 from os import makedirs
 import os.path
 from aux.checkConfig import readDefaults, makeConfig
-
+from aux.checkPatients import checkPatientsBetas, checkPatientInfo
 min_version("6.10.0")
 
 DEFAULTS = readDefaults(os.path.join(workflow.basedir, "config.schema.yml"))
@@ -29,6 +29,7 @@ patient_col = config.get("patient_col", "Patient")
 age_col = config.get("age_col", "Age")
 
 df = pd.read_csv(config.get("patientInfo"))
+df = checkPatientInfo(df, patient_col)
 AGES = df.groupby(patient_col)[age_col].first().to_dict()
 
 stemCellsSweep=config.get("stemCells").split("-")
@@ -37,6 +38,7 @@ STEMCELLS=list(range(int(stemCellsSweep[0]), int(stemCellsSweep[1]), int(stemCel
 
 if config.get("mode") == "trees":
     PATIENTS, = glob_wildcards(config["input_dir"] + "/{patient}.csv")
+    PATIENTS = checkPatientsBetas(PATIENTS, config["input_dir"])
     ruleorder: getXML_short > getXML
 else:
     df["sample_basename"] = df["Basename"].str.split("/").str[-1]
