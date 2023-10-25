@@ -17,7 +17,7 @@ def makeConfig(config: dict, defaults: dict) -> dict:
     # Merge 'config' with 'defaults' to add missing variables
     config = {**defaults, **config}
     if not config.get("mle_iterations"):
-        config["mle_iterations"] = config.get("iterations") / config.get("mle_steps")
+        config["mle_iterations"] = int(config.get("iterations") / config.get("mle_steps"))
     if not config.get("mle_sampling"):
-        config["mle_sampling"] = config.get("iterations") / 1000
+        config["mle_sampling"] = int(config.get("iterations") / 1000)
     return config
