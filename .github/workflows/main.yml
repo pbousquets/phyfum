@@ -1,15 +1,13 @@
 name: Publish to PyPI
 
 on:
-  release:
-    types: [published]
   push:
     branches: [ "main" ]
 
 permissions:
   contents: read
   id-token: write # IMPORTANT: this permission is mandatory for trusted publishing
-  
+
 jobs:
   deploy:
 
@@ -36,26 +34,3 @@ jobs:
       run: hatch run test
     - name: Publish package distributions to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
-
-      
-
-
-
-name: Use hatch-version-action
-
-
-  workflow_dispatch:
-
-env:
-  HATCH_INDEX_USER: __token__
-  HATCH_INDEX_AUTH: ${{ secrets.pypi_token }}
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-      - uses: waylonwalker/hatch-action@v2
-        with:
-          before-command: "phyfum"
