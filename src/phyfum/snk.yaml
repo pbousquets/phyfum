@@ -1,0 +1,152 @@
+logo: "PHYFUM"
+tagline: "PHYFUM: PHYlogeny from FlUctuating Methylation"
+annotations:
+  input_dir:
+    type: path
+    help: "Directory containing either the input IDAT files and the array metadata or the CSV files with the beta values."
+    required: true
+  output:
+    type: path
+    help: "Output identifier"
+    required: true
+  mode:
+    type: str
+    help: "Whether to run the complete workflow (from IDATs) or only the tree inference (from individual patient beta csv files)"
+    default: complete
+    required: false
+  patientInfo:
+    type: path
+    help: "Path to patient metadata in CSV format."
+    required: false
+  patient_col:
+    type: str
+    help: "Column name for the patients in the metadata"
+    default: Patient
+    required: false
+  age_col:
+    type: str
+    help: "Column name for the age in the metadata"
+    default: Age
+    required: false
+  pattern:
+    type: str
+    help: "Regex pattern to find the array metadata in the input_dir"
+    default: "csv$"
+    required: false
+  genome_plot:
+    type: bool
+    help: "Whether to generate CNV genome plots"
+    default: true
+    required: false
+  manifest:
+    type: str
+    help: "Path to Illumina EPIC manifest csv file"
+    required: false
+  percent:
+    type: int
+    help: "Float specifying the top p%% of most heterogeneous CpG loci to include when calling fCpGs."
+    default: 5
+    required: false
+  stemCells:
+    type: string
+    help: "Range of stem cells to run Phyfum in the format 'start:end:step'."
+    default: "3:10:2"
+    required: false
+  delta:
+    type: number
+    help: "Prior for the delta parameter"
+    default: 0.2
+    required: false
+  eta:
+    type: number
+    help: "Prior for the eta parameter"
+    default: 0.7
+    required: false
+  kappa:
+    type: int
+    help: "Prior for the kappa parameter"
+    default: 50
+    required: false
+  mu:
+    type: number
+    help: "Prior for the mu parameter"
+    default: 0.1
+    required: false
+  gamma:
+    type: number
+    help: "Prior for the gamma parameter"
+    default: 0.1
+    required: false
+  lam:
+    type: number
+    help: "Prior for the lambda parameter"
+    default: 0.1
+    required: false
+  iterations:
+    type: int
+    help: "Number of MCMC iterations."
+    default: 750000
+    required: false
+  precision:
+    type: int
+    help: "Number of significant digits to consider when digitizing the values"
+    default: 6
+    required: false
+  sampling:
+    type: int
+    help: "Frequency of sampling in the log file"
+    default: 75
+    required: false
+  screenSampling:
+    type: int
+    help: "Frequency of sampling to print in the screen"
+    default: 500
+    required: false
+  stripRownames:
+    type: bool
+    help: "Activate the flag if the first column are rownames. Necessary if the full workflow is ran"
+    default: true
+    required: false
+  mle_ps:
+    type: bool
+    help: "Activates/deactivates the analysis of the MLE samples to estimate the MLE using Path Sampling"
+    default: false
+    required: false
+  mle_ss:
+    type: bool
+    help: "Activates/deactivates the analysis of the MLE samples to estimate the MLE using Stepping Stone"
+    default: false
+    required: false
+  hme:
+    type: bool
+    help: "Activates/deactivates the estimation of the MLE using the Harmonic Mean Estimate"
+    default: true
+    required: false
+  mle_steps:
+    type: int
+    help: "Number of power posteriors to use for MLE"
+    default: 100
+    required: false
+  mle_iterations:
+    type: int
+    help: "Number of MCMC iterations to run in each step. Defaults to MCMC --iterations / --mle-steps."
+    required: false
+  mle_sampling:
+    type: int
+    help: "Sampling period for the power-posterior MCMC samplers. Defaults to --iterations / 1000"
+    required: false
+  singularity:
+    type: bool
+    help: "Run Phyfum on singularity"
+    default: true
+    required: false
+  workdir:
+    type: path
+    help: "Path to the output directory"
+    default: "."
+    required: false
+  threads:
+    type: int
+    help: "Number of threads for parallel processing during the CNV calling (set not greater than --cores)"
+    default: 1
+    required: false

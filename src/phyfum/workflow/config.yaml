@@ -1,0 +1,6 @@
+input_dir: /mnt/d/Lab/Estancia/Phyllogenomics/package/data
+output: test
+patientInfo: /mnt/d/Lab/Estancia/Phyllogenomics/package/data/test.csv
+pattern: test.csv
+singularity: false
+workdir: na

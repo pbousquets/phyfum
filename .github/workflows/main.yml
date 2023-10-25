@@ -1,0 +1,21 @@
+name: Use hatch-version-action
+
+on:
+  push:
+    branches: [ "*" ]
+
+  workflow_dispatch:
+
+env:
+  HATCH_INDEX_USER: __token__
+  HATCH_INDEX_AUTH: ${{ secrets.pypi_token }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: waylonwalker/hatch-action@v2
+        with:
+          before-command: "test-lint"

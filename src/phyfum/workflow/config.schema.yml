@@ -1,0 +1,128 @@
+$schema: "http://json-schema.org/draft-07/schema#"
+description: Configuration file for Snakemake workflow
+type: object
+properties:
+  input_dir:
+    type: string
+    description: Directory containing either the input IDAT files and the array metadata or the CSV files with the beta values.
+  output:
+    type: string
+    description: Output identifier.
+  patient_col:
+    type: string
+    description: Column name for the patients in the metadata
+    default: Patient
+  age_col:
+    type: string
+    description: Column name for the age in the metadata
+    default: Age
+  pattern:
+    type: string
+    description: Regex pattern to find the array metadata in the input_dir.
+    default: "csv$"
+  genome_plot:
+    type: boolean
+    description: Whether to generate CNV genome plots
+    default: true
+  threads:
+    type: integer
+    default: 1
+    description: Number of threads for parallel processing.
+  manifest:
+    type: ["string", "null"]
+    description: path to Illumina EPIC manifest csv file.
+  percent:
+    type: integer
+    description: Float specifying the top p%% of most heterogeneous CpG loci to include.
+    default: 5
+  patientInfo:
+    type: string
+    description: Path to patient metadata in CSV format.
+  stemCells:
+    type: string
+    default: "3-6-1"
+    description: Range of stem cells to run Phyfum in the format "start:end:step".
+  delta:
+    type: number
+    description: Prior for the delta parameter
+    default: 0.2
+  eta:
+    type: number
+    description: Prior for the eta parameter
+    default: 0.7
+  kappa:
+    type: integer
+    description: Prior for the kappa parameter
+    default: 50
+  mu:
+    type: number
+    description: Prior for the mu parameter
+    default: 0.1
+  gamma:
+    type: number
+    description: Prior for the gamma parameter
+    default: 0.1
+  lam:
+    type: number
+    description: Prior for the lambda parameter
+    default: 1
+  iterations:
+    type: integer
+    description: Number of MCMC iterations.
+    default: 750000
+  precision:
+    type: integer
+    description: Number of significant digits to consider when digitizing the values
+    default: 6
+  sampling:
+    type: integer
+    description: Frequency of sampling in the log file
+    default: 75
+  screenSampling:
+    type: integer
+    description: Frequency of sampling to print in the screen
+    default: 500
+  stripRownames:
+    type: boolean
+    default: true
+    description: Activate the flag if the first column are rownames. Necessary if the full workflow is ran
+  mle_ps:
+    type: boolean
+    default: false
+    description: Activates/deactivates the analysis of the MLE samples to estimate the MLE using Path Sampling
+  mle_ss:
+    type: boolean
+    default: false
+    description: Activates/deactivates the analysis of the MLE samples to estimate the MLE using Stepping Stone
+  hme:
+    type: boolean
+    default: false
+    description: Activates/deactivates the estimation of the MLE using the Harmonic Mean Estimate
+  mle_steps:
+    type: integer
+    description: Number of power posteriors to use for MLE
+    default: 100
+  mle_iterations:
+    type: ["integer", "null"]
+    description: Number of MCMC iterations to run in each step. Defaults to MCMC --iterations / --mle-steps.
+  mle_sampling:
+    type: ["integer", "null"]
+    description: Sampling period for the power-posterior MCMC samplers. Defaults to --iterations / 1000
+    default: 1000
+  singularity:
+    type: boolean
+    description: Run Phyfum on singularity
+  workdir:
+    type: string
+    description: Path to the output directory
+  mode:
+    type: string
+    description: Whether to run the complete workflow (from IDATs) or only the inference (from individual patient beta csv files)
+    enum:
+      - complete
+      - trees
+    default: complete
+required:
+  - input_dir
+  - output
+  - patientInfo
