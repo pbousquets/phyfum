@@ -2,9 +2,9 @@ $schema: "http://json-schema.org/draft-07/schema#"
 description: Configuration file for Snakemake workflow
 type: object
 properties:
-  input_dir:
+  input:
     type: string
-    description: Directory containing either the input IDAT files and the array metadata or the CSV files with the beta values.
+    description: beta CSV file or directory containing raw IDAT files and metadata
   output:
     type: string
     description: Output identifier.
@@ -12,22 +12,31 @@ properties:
     type: string
     description: Column name for the patients in the metadata
     default: Patient
+  sample_col:
+    type: string
+    description: Column name for the samples in the metadata
+    default: Sample
   age_col:
     type: string
     description: Column name for the age in the metadata
     default: Age
-  pattern:
+  sheet:
     type: string
-    description: Regex pattern to find the array metadata in the input_dir.
-    default: "csv$"
+    help: "Samplesheet of the array"
+  fcpgs:
+    type: string
+    description: Set of fcpgs (one per row) to consider. Skips fCpG calling.
+  blacklist:
+    type: string
+    description: Set of fcpgs (one per row) to blacklist.
+  nocnv:
+    type: boolean
+    description: Whether to deactivate CNV calling (only for the complete workflow)
+    default: false
   genome_plot:
     type: boolean
     description: Whether to generate CNV genome plots
     default: true
-  threads:
-    type: integer
-    default: 1
-    description: Number of threads for parallel processing.
   manifest:
     type: ["string", "null"]
     description: path to Illumina EPIC manifest csv file.
@@ -38,9 +47,10 @@ properties:
   patientInfo:
     type: string
     description: Path to patient metadata in CSV format.
+    required: false
   stemCells:
     type: string
-    default: "3-6-1"
+    default: "3-10-2"
     description: Range of stem cells to run Phyfum in the format "start:end:step".
   delta:
     type: number
@@ -115,14 +125,10 @@ properties:
   workdir:
     type: string
     description: Path to the output directory
-  mode:
-    type: string
-    description: Whether to run the complete workflow (from IDATs) or only the inference (from individual patient beta csv files)
-    enum:
-      - complete
-      - trees
-    default: complete
+  seed:
+    type: integer
+    description: Set a seed for BEAST. Make it negative to inactivate this parameter
+    default: 123
 required:
-  - input_dir
+  - input
   - output
-  - patientInfo

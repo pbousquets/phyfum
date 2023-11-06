@@ -1,19 +1,14 @@
 logo: "PHYFUM"
 tagline: "PHYFUM: PHYlogeny from FlUctuating Methylation"
 annotations:
-  input_dir:
+  input:
     type: path
-    help: "Directory containing either the input IDAT files and the array metadata or the CSV files with the beta values."
+    help: "beta CSV file or directory containing raw IDAT files and metadata"
     required: true
   output:
     type: path
     help: "Output identifier"
     required: true
-  mode:
-    type: str
-    help: "Whether to run the complete workflow (from IDATs) or only the tree inference (from individual patient beta csv files)"
-    default: complete
-    required: false
   patientInfo:
     type: path
     help: "Path to patient metadata in CSV format."
@@ -23,15 +18,28 @@ annotations:
     help: "Column name for the patients in the metadata"
     default: Patient
     required: false
+  sample_col:
+    type: str
+    help: Column name for the samples in the metadata
+    default: Sample
+    required: false
   age_col:
     type: str
     help: "Column name for the age in the metadata"
     default: Age
     required: false
-  pattern:
+  fcpgs:
     type: str
-    help: "Regex pattern to find the array metadata in the input_dir"
-    default: "csv$"
+    help: Set of fcpgs (one per row) to consider. Skips fCpG calling.
+    required: false
+  blacklist:
+    type: string
+    help: Set of fcpgs (one per row) to blacklist.
+    required: false
+  cnv:
+    type: boolean
+    help: Whether to activate or not CNV calling (only for the complete workflow)
+    default: true
     required: false
   genome_plot:
     type: bool
@@ -50,7 +58,7 @@ annotations:
   stemCells:
     type: string
     help: "Range of stem cells to run Phyfum in the format 'start:end:step'."
-    default: "3:10:2"
+    default: "3-10-2"
     required: false
   delta:
     type: number
@@ -135,6 +143,10 @@ annotations:
     type: int
     help: "Sampling period for the power-posterior MCMC samplers. Defaults to --iterations / 1000"
     required: false
+  seed:
+    type: int
+    help: Set a seed for BEAST. Make it negative to inactivate this parameter
+    default: 123
   singularity:
     type: bool
     help: "Run Phyfum on singularity"
@@ -144,9 +156,4 @@ annotations:
     type: path
     help: "Path to the output directory"
     default: "."
-    required: false
-  threads:
-    type: int
-    help: "Number of threads for parallel processing during the CNV calling (set not greater than --cores)"
-    default: 1
     required: false

@@ -1,4 +1,5 @@
 import yaml
+from os.path import abspath
 
 
 def readDefaults(yaml_path: str) -> dict:
@@ -12,7 +13,7 @@ def makeConfig(config: dict, defaults: dict) -> dict:
     """
     Remove Nones from config and add missing variables from the defaults
     """
-    config = {key: value for key, value in config.items() if value}
+    config = {key: value for key, value in config.items() if value is not None and value != "None"}
 
     # Merge 'config' with 'defaults' to add missing variables
     config = {**defaults, **config}
@@ -20,4 +21,6 @@ def makeConfig(config: dict, defaults: dict) -> dict:
         config["mle_iterations"] = int(config.get("iterations") / config.get("mle_steps"))
     if not config.get("mle_sampling"):
         config["mle_sampling"] = int(config.get("iterations") / 1000)
+    if config.get("blacklist"):
+        config["blacklist"] = abspath(config.get("blacklist"))
     return config
