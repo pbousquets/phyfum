@@ -1,6 +1,0 @@
-input: /mnt/d/Lab/Estancia/Phyllogenomics/package/data
-output: test
-patientInfo: /mnt/d/Lab/Estancia/Phyllogenomics/package/data/test.csv
-sheet: test.csv
-singularity: false
-workdir: na

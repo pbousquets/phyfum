@@ -31,12 +31,13 @@ crossreactivefile = workflow.source_path("data/13059_2016_1066_MOESM1_ESM.csv")
 patient_col = config.get("patient_col", "Patient")
 sample_col = config.get("sample_col", "Sample")
 age_col = config.get("age_col", "Age")
+age_diagnosis_col = config.get("age_diagnosis_col"),
+sample_type_col = config.get("sample_type_col"),
 
 df = pd.read_csv(config.get("patientInfo"))
 df = checkPatientInfo(df, patient_col)
 PATIENTS = df[patient_col].unique()
 SAMPLES = df.groupby(patient_col)[sample_col].agg(list)
-AGES = df.groupby(patient_col)[age_col].first().to_dict() # TODO: change this. Samples should be able to have different age.
 
 stemCellsSweep=config.get("stemCells").split("-")
 STEMCELLS=list(range(int(stemCellsSweep[0]), int(stemCellsSweep[1]), int(stemCellsSweep[2])))
@@ -185,11 +186,11 @@ rule getXML:
     input: 
         minibetas = aggregate_input,
         blacklist = rules.merge_blacklists.output,
+        patientInfo = config.get("patientInfo"),
     output: 
         xml="results/XMLs/{patient}.{stemcell}cells.xml",
         tmp_input = temp("{patient}.{stemcell}cells.csv.tmp")
     params:
-        age = lambda wildcards: AGES.get(wildcards.patient),
         delta = config.get("delta", .2),
         eta = config.get("eta", .7),
         kappa = config.get("kappa", 50),
@@ -207,6 +208,11 @@ rule getXML:
         mle_steps = config.get("mle_steps", 100),
         mle_iterations = config.get("mle_iterations", int(config.get("iterations", 750_000)/config.get("mle_steps", 100))),
         mle_sampling = config.get("mle_sampling", int(config.get("iterations", 750_000)/1000)),
+        luca_mode = config.get("luca_mode", "auto"),
+        age_col = age_col,
+        age_diagnosis_col = f"--age-diagnosis-col {age_diagnosis_col}" if age_diagnosis_col else "",
+        sample_col = sample_col,
+        sample_type_col = sample_type_col,        
         XMLgenerator = XMLgenerator
     shell:
         """
@@ -219,7 +225,7 @@ rule getXML:
         name=$(basename {output.xml})
         name=${{name%.xml}}
 
-        python3 {XMLgenerator} --age {params.age} --input $tmp --output $name --stemCells {wildcards.stemcell} --delta {params.delta} --eta {params.eta} --kappa {params.kappa} --mu {params.mu} --gamma {params.gamma} --lambda {params.lam} --iterations {params.iterations} --precision {params.precision} --sampling {params.sampling} --screenSampling {params.screenSampling} {params.stripRownames} {params.mle_ps} {params.mle_ss} {params.hme} --mle-steps {params.mle_steps} --mle-iterations {params.mle_iterations} --mle-sampling {params.mle_sampling} 
+        python3 {XMLgenerator} --samplesheet {input.patientInfo} --input $tmp --output $name --luca-mode {params.luca_mode} --age-col {params.age_col} --sample-col {params.sample_col} --sample-type-col {params.sample_type_col} --stemCells {wildcards.stemcell} --delta {params.delta} --eta {params.eta} --kappa {params.kappa} --mu {params.mu} --gamma {params.gamma} --lambda {params.lam} --iterations {params.iterations} --precision {params.precision} --sampling {params.sampling} --screenSampling {params.screenSampling} {params.stripRownames} {params.mle_ps} {params.mle_ss} {params.hme} --mle-steps {params.mle_steps} --mle-iterations {params.mle_iterations} --mle-sampling {params.mle_sampling} 
         """
 
         

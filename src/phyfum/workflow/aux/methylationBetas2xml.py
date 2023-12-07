@@ -36,8 +36,8 @@ class CustomCommand(click.Command):
 
 
 @click.command(cls=CustomCommand)
-@click.option("--age", cls=CustomOption, required=True, help="Samples age in years", type=int, help_group="Inputs")
 @click.option("--input", cls=CustomOption, required=True, help="Methylation array beta values in CSV format", type=str, help_group="Inputs")
+@click.option("--samplesheet", cls=CustomOption, required=True, help="Methylation array sample sheet", type=str, help_group="Inputs")
 @click.option("--stemCells", "stemCells", cls=CustomOption, default=3, help="Prior for the stemCells parameter", type=int, help_group="Priors")
 @click.option("--delta", cls=CustomOption, default=0.2, help="Prior for the delta parameter", type=float, help_group="Priors")
 @click.option("--eta", cls=CustomOption, default=0.7, help="Prior for the eta parameter", type=float, help_group="Priors")
@@ -56,6 +56,11 @@ class CustomCommand(click.Command):
     "--mle-ss", "mle_ss", cls=CustomOption, default=False, help="Activates/deactivates the analysis of the MLE samples to estimate the MLE using Stepping Stone", is_flag=True, help_group="MLE estimation module"
 )
 @click.option("--hme", cls=CustomOption, default=False, help="Activates/deactivates the estimation of the MLE using the Harmonic Mean Estimate", is_flag=True, help_group="MLE estimation module")
+@click.option("--luca-mode", "luca_mode", cls=CustomOption, default="auto", help="Should LUCA be fixed to birth or free (recomended when no normals available)", type=click.Choice(['auto', 'free', 'fixed'], case_sensitive=False), help_group="Extra parameters")
+@click.option("--age-col", "age_col", cls=CustomOption, default="Age", help="Name of the age column in the samplesheet", type=str, help_group="Extra parameters")
+@click.option("--age-diagnosis-col", "age_diagnosis_col", cls=CustomOption, required=False, help="Age at diagnosis column in sample sheet", type=str, help_group="Extra parameters")
+@click.option("--sample-col", "sample_col", cls=CustomOption, default="Sample", help="Name of the sample column in the samplesheet. It should contain the names in the betas file", type=str, help_group="Extra parameters")
+@click.option("--sample-type-col", "sample_type_col", cls=CustomOption, default="Group", help="Name of the grouping column in the samplesheet. It should tell which samples are tumoral and which ones are normal", type=str, help_group="Extra parameters")
 @click.option("--iterations", cls=CustomOption, default=750_000, help="Number of MCMC iterations (chain length)", type=int, help_group="Extra parameters")
 @click.option("--precision", cls=CustomOption, default=3, help="Number of significant digits to consider when rounding the values", type=int, help_group="Extra parameters")
 @click.option("--sampling", cls=CustomOption, default=75, help="Frequency of sampling in the log file", type=int, help_group="Extra parameters")
@@ -64,7 +69,7 @@ class CustomCommand(click.Command):
 @click.option("--output", cls=CustomOption, default="test", help="Output prefix for the analysis files (XML, trees, logs...)", type=str, help_group="Extra parameters")
 def main(
     input: str,
-    age: int,
+    samplesheet: str,
     stemCells: int,
     delta: float,
     eta: float,
@@ -74,6 +79,10 @@ def main(
     Lambda: float,
     mle_iterations: int,
     mle_sampling: int,
+    age_col: str,
+    age_diagnosis_col: str,
+    sample_col: str,
+    sample_type_col: str,
     iterations: int = 20_000,
     precision: int = 3,
     sampling: int = 200,
@@ -85,8 +94,9 @@ def main(
     mle_ps: bool = False,
     mle_ss: bool = False,
     hme: bool = False,
+    luca_mode: str = "auto",
 ) -> None:
-    myobj = readMethylation(input, precision, stripRownames)
+    myobj = readMethylation(input, precision, stripRownames, samplesheet, age_col, age_diagnosis_col, sample_col, sample_type_col, luca_mode)
     myobj.parseSamples()
 
     if mle_ps or mle_ss or hme:
@@ -96,7 +106,7 @@ def main(
         mle_iterations = ceil(iterations // mle_steps) if mle_iterations is None else mle_iterations
         mle_sampling = floor(mle_iterations // 1000) if mle_sampling is None else mle_sampling
 
-    XMLfile = createXML(age=age, stemCells=stemCells, delta=delta, eta=eta, kappa=kappa, mu=mu, gamma=gamma, Lambda=Lambda)
+    XMLfile = createXML(stemCells=stemCells, delta=delta, eta=eta, kappa=kappa, mu=mu, gamma=gamma, Lambda=Lambda)
     XMLfile.addSamples(myobj)
     XMLfile.buildDoc(output, iterations=iterations, sampling=sampling, screenSampling=screenSampling, mle=mle, mle_ss=mle_ss, mle_ps=mle_ps, hme=hme, mle_iterations=mle_iterations, mle_sampling=mle_sampling)
     XMLfile.printDocument(output)
