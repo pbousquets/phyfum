@@ -1,6 +1,6 @@
 logo: "PHYFUM"
 tagline: "PHYFUM: PHYlogeny from FlUctuating Methylation"
-annotations:
+cli:
   input:
     type: path
     help: "beta CSV file or directory containing raw IDAT files and metadata"
@@ -12,6 +12,12 @@ annotations:
   patientInfo:
     type: path
     help: "Path to patient metadata in CSV format."
+    required: true
+  luca_mode:
+    type: str
+    help: "Should LUCA be fixed to birth or free (recomended when no normals available) [auto,free,fixed]"
+    enum: ["auto", "free", "fixed"]
+    default: auto
     required: false
   patient_col:
     type: str
@@ -27,6 +33,15 @@ annotations:
     type: str
     help: "Column name for the age in the metadata"
     default: Age
+    required: false
+  age_diagnosis_col:
+    type: str
+    help: "Column name for the age at diagnosis in the metadata. Should be equal across samples of same patient"
+    required: false
+  sample_type_col:
+    type: str
+    help: "Column name for the grouping column in the samplesheet. It should tell which samples are tumoral and which ones are normal/control"
+    default: Group
     required: false
   fcpgs:
     type: str

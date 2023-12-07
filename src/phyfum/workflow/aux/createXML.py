@@ -1,5 +1,5 @@
 import re
-from typing import List
+from typing import List, Dict
 
 from yattag import Doc
 from yattag import indent
@@ -12,8 +12,7 @@ class createXML:
     This class builds the actual XML file
     """
 
-    def __init__(self, age: int, stemCells: int = 3, delta: float = 0.2, eta: float = 0.7, kappa: float = 50, mu: float = 0.1, gamma: float = 0.1, Lambda: float = 1, normalize=False) -> None:
-        self.age = age
+    def __init__(self, stemCells: int = 3, delta: float = 0.2, eta: float = 0.7, kappa: float = 50, mu: float = 0.1, gamma: float = 0.1, Lambda: float = 1, normalize=False) -> None:
         self.stemCells = stemCells
         self.delta = delta
         self.eta = eta
@@ -28,6 +27,8 @@ class createXML:
     def addSamples(self, readMet: readMethylation):
         self.sequences: List[str] = readMet.samples
         self.names: List[str] = readMet.sample_names
+        self.ages: Dict[int] = readMet.ages
+        self.tree_settings = readMet.tree_settings
 
     def buildDoc(
         self,
@@ -50,7 +51,7 @@ class createXML:
                 self.doc.attr(id="taxa")
                 for name in self.names:
                     with self.tag("taxon", id=f"{name}"):
-                        self.doc.stag("date", value=f"{self.age}", direction="forwards", units="years")
+                        self.doc.stag("date", value=f"{self.ages.get(name)}", direction="forwards", units="years")
 
             self.newSection("The list of sequences to be analysed")
             with self.tag("afalignment", id="alignment"):
@@ -129,16 +130,16 @@ class createXML:
                     self.doc.stag("parameter", id="cenancestor.frequencies", value="1")
 
             self.newSection("The cenancestor treelikelihood")
-            with self.tag("cenancestorTreeLikelihood", id="treeLikelihood", useAmbiguities="false", heightRules="true"):
+            with self.tag("cenancestorTreeLikelihood", id="treeLikelihood", useAmbiguities="false", heightRules=self.tree_settings.get("heightRules")):
                 self.doc.stag("alignment", idref="alignment")
                 self.doc.stag("treeModel", idref="treeModel")
                 self.doc.stag("siteModel", idref="siteModel")
                 self.doc.stag("cenancestorFrequency", idref="cenancestorFrequencyModel")
                 self.doc.stag("tipStatesModel ", idref="errorModel")
                 with self.tag("cenancestorHeight"):
-                    self.doc.stag("parameter", id="luca_height", value=f"{self.age}")
+                    self.doc.stag("parameter", id="luca_height", **self.tree_settings.get("cenancestorHeight")) # Unpack the dict settings agnostically
                 with self.tag("cenancestorBranch"):
-                    self.doc.stag("parameter", id="luca_branch", value="1", upper=f"{self.age}", lower="0.0")
+                    self.doc.stag("parameter", id="luca_branch", **self.tree_settings.get("cenancestorBranch"))
                 self.doc.stag("strictClockCenancestorBranchRates", idref="branchRates")
 
             self.newSection("Set the operators")
@@ -189,7 +190,11 @@ class createXML:
                         self.doc.stag("parameter", idref="flipflop.lambda")
                     with self.tag("down"):
                         self.doc.stag("parameter", idref="treeModel.allInternalNodeHeights")
-                        # self.doc.stag("parameter", idref="luca_height")
+                        if not self.tree_settings.get("fixed_luca"): # ONLY WHEN LUCA NOT FIXED
+                            self.doc.stag("parameter", idref="luca_branch") # TODO: Check this
+                if not self.tree_settings.get("fixed_luca"): # ONLY WHEN LUCA NOT FIXED
+                    with self.tag("scaleOperator", scaleFactor="0.25", weight="3.0"):
+                        self.doc.stag("parameter", idref="luca_branch")
 
             self.newSection("Define MCMC")
             with self.tag("mcmc", id="mcmc", chainLength=f"{iterations}", autoOptimize="true", operatorAnalysis=f"{output}.ops"):
@@ -228,8 +233,9 @@ class createXML:
                         self.doc.stag("coalescentLikelihood", idref="coalescent")
 
                         self.newSection("Cenancestor Prior on the height, since it is easier to have a meaningful prior on it (time of the initial development of the BE fragment)", addNewline=False)
-                        with self.tag("uniformPrior", lower="0.0", upper=f"{self.age}"):
-                            self.doc.stag("parameter", idref="luca_branch")
+                        if not self.tree_settings.get("fixed_luca"):
+                            with self.tag("uniformPrior", **self.tree_settings.get("luca_height_prior")):
+                                self.doc.stag("parameter", idref="luca_height")
 
                     with self.tag("likelihood", id="likelihood"):
                         self.doc.stag("cenancestorTreeLikelihood", idref="treeLikelihood")

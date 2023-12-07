@@ -20,9 +20,6 @@ properties:
     type: string
     description: Column name for the age in the metadata
     default: Age
-  sheet:
-    type: string
-    help: "Samplesheet of the array"
   fcpgs:
     type: string
     description: Set of fcpgs (one per row) to consider. Skips fCpG calling.
@@ -47,7 +44,11 @@ properties:
   patientInfo:
     type: string
     description: Path to patient metadata in CSV format.
-    required: false
+  luca_mode:
+    type: string
+    description: "Should LUCA be fixed to birth or free (recomended when no normals available)"
+    enum: ["auto", "free", "fixed"]
+    default: auto
   stemCells:
     type: string
     default: "3-10-2"
@@ -132,3 +133,4 @@ properties:
 required:
   - input
   - output
+  - patientInfo
