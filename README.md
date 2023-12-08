@@ -18,4 +18,4 @@ Phyfum is a tool for inferring phylogenetic trees on methylation-based studies. 
 
 We have implemented the original model described in the paper within BEAST v.1.8.4, which is accesible [here](https://github.com/pbousquets/beast-mcmc-flipflop). In order to make it more accesible, we have designed a snakemake-based pipeline, covering the IDAT preprocessing, fCpG calling, automatic XML generation and BEAST inference. Additionally, if both tumor and normal samples are available, CNVs are called to curate non-fluctuating CpGs.
 
-Before you start using the tool, we recommend you reading [the-workflow.md](the-workflow.md "mention") section to fully understand how our Phyfum works.
+Before you start using the tool, we recommend you reading [the-workflow.md](the-workflow.md "mention") section to fully understand how Phyfum works.
