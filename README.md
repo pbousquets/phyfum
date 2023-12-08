@@ -14,25 +14,51 @@
 
 ## Quick start
 
-Phyfum allows two different workflows. If you're working with raw data (IDAT files), you can try to run phyfum in __complete__ mode. It will preprocess the files with [minfi](https://bioconductor.org/packages/release/bioc/html/minfi.html). If needed and if both tumor and normal samples are available, it will also run a copy number analysis with [rascal](https://github.com/crukci-bioinformatics/rascal). This will allow to blacklist fCpGs that won't fluctuate as the model expects. 
+Phyfum allows two different workflows. If you are working with raw data (IDAT files), you can run phyfum in __complete__ mode. In this mode, phyfum will preprocess the files with [minfi](https://bioconductor.org/packages/release/bioc/html/minfi.html). If needed and if both tumor and normal samples are available, it will also run a copy number analysis with [rascal](https://github.com/crukci-bioinformatics/rascal) to blacklist fCpGs located within copy-number-altered regions, which do not behave as the model expects.
 
 An example run for this workflow would look like this:
 
 ```{bash}
-phyfum run --input ${input_dir}/epic_array_dir --output experiment1 --workdir experiment1 --patientinfo /path/to/epic_array_dir/sample_sheet.csv --patient-col patient --age-col age --patient-col Patient --sample-col Sample --sample-type-col group --stemcells 3-10-3 
+input_dir="epic_array_dir" #path to input directory with idat files and proper folder structure
+output_dir="experiment1" #path to output directory
+patient_info="${input_dir}/sample_sheet.csv" #path to csv file with experiment design
+
+phyfum run --input ${input_dir}\
+ --output ${output_dir}\
+ --workdir ${output_dir}\
+ --patientinfo ${patient_info}\
+ --patient-col patient\
+ --age-col age\
+ --patient-col patient\
+ --sample-col sample\
+ --sample-type-col group\
+ --stemcells 3-10-3 
 ```
 
-In case you already have the beta values, you can run phyfum in __trees__ mode. The pipeline will simply deploy the XMLcreator tool to format the input data as expected by [BEAST](https://beast.community/) and run the inference.
+If you have already pre-processed the data and have the beta values, you can run phyfum in __trees__ mode. The pipeline will simply deploy the XMLcreator tool to format the input data as expected by [our modified version](https://github.com/pbousquets/beast-mcmc-flipflop) of [BEAST](https://beast.community/) and run the inference.
 
 ```{bash}
-phyfum run --input /path/to/exampleBeta.csv --output onlybetas --workdir onlybetas --patientinfo /path/to/meta.csv --patient-col patient --age-col age --sample-type-col group --stemcells 3-10-3
+input_dir="beta_dir"
+input=${input_dir}/"exampleBeta.csv" #path to input file with beta values
+output_dir="onlybetas" #path to output directory
+patient_info="${input_dir}/meta.csv" #path to csv file with metadata
+
+phyfum run --input ${input}\
+ --output ${output_dir}\
+ --workdir ${output_dir}\
+ --patientinfo ${patient_info}\
+ --patient-col patient\
+ --age-col age\
+ --patient-col patient\
+ --sample-type-col group\
+ --stemcells 3-10-3 
 ```
 
 Phyfum auto-detects what kind of input is provided and selects automatically the optimal workflow.
 
 ## Installation
 
-A docker image of [Phyfum](https://hub.docker.com/repository/docker/pbousquets/phyfum/general) is avaiable, and is our __recommended way to use the tool:__
+A docker image of [Phyfum](https://hub.docker.com/repository/docker/pbousquets/phyfum/general) is available, and is our __recommended way to use the tool:__
 
 ```{bash}
 docker pull pbousquets/phyfum
@@ -40,14 +66,40 @@ docker pull pbousquets/phyfum
 
 The commands above can be ran as:
 ```{bash}
-docker run --rm -it -v ${input_dir}:${input_dir} -v ${output_dir}:${output_dir} pbousquets/phyfum --input ${input_dir}/epic_array_dir --output experiment1 --workdir experiment1 --patientinfo ${input_dir}//epic_array_dir/sample_sheet.csv --patient-col patient --age-col age --patient-col Patient --sample-col Sample --sample-type-col group  --workdir ${output_dir} --stemcells 3-10-3 
- ```
+input_dir="epic_array_dir" #path to input directory with idat files and proper folder structure
+output_dir="experiment1" #path to output directory
+patient_info="${input_dir}/sample_sheet.csv" #path to csv file with experiment design
 
-```{bash}
-docker run --rm -it -v ${input_dir}:${input_dir} -v ${output_dir}:${output_dir} pbousquets/phyfum --input ${input_dir}/exampleBeta.csv --output onlybetas --workdir onlybetas --patientinfo ${input_dir}/meta.csv --patient-col patient --age-col age --sample-type-col group --stemcells 3-10-3
+docker run --rm -it -v ${input_dir}:${input_dir} -v ${output_dir}:${output_dir}\
+pbousquets/phyfum --input ${input_dir}\
+ --output ${output_dir}\
+ --workdir ${output_dir}\
+ --patientinfo ${patient_info}\
+ --patient-col patient\
+ --age-col age\
+ --patient-col patient\
+ --sample-col sample\
+ --sample-type-col group\
+ --stemcells 3-10-3 
 ```
 
+```{bash}
+input_dir="beta_dir"
+input=${input_dir}/"exampleBeta.csv" #path to input file with beta values
+output_dir="onlybetas" #path to output directory
+patient_info="${input_dir}/meta.csv" #path to csv file with metadata
 
+docker run --rm -it -v ${input_dir}:${input_dir} -v ${output_dir}:${output_dir}\
+pbousquets/phyfum --input ${input}\
+ --output ${output_dir}\
+ --workdir ${output_dir}\
+ --patientinfo ${patient_info}\
+ --patient-col patient\
+ --age-col age\
+ --patient-col patient\
+ --sample-type-col group\
+ --stemcells 3-10-3 
+```
 
 ### Manual installation
 
@@ -67,7 +119,7 @@ p_load_gh("crukci-bioinformatics/rascal")
 
 ## Preparing the sample sheet / metadata
 
-Phyfum relies on the Array Sample sheet for the complete workflow and a custom metadata file for the short workflow. In any case, the file must be a comma-separated file (.csv). 
+Phyfum relies on the Array Sample sheet for the __complete__ workflow and a custom metadata file for the __trees__  workflow. In any case, the file must be a comma-separated file (.csv). 
 
 - __Sample sheet__. Please, make sure you have a column called 'Basename', that leads to the idat files of each sample. For instance, suppose the folder tree of your array looks like this:
 
