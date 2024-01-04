@@ -117,7 +117,7 @@ p_load_gh("crukci-bioinformatics/rascal")
 
 Phyfum relies on the Array Sample sheet for the __complete__ workflow and a custom metadata file for the __trees__  workflow. In any case, the file must be a comma-separated file (.csv). 
 
-- __Sample sheet__. When running the `complete` workflow, we recommend passing the samplesheet. Custom columns can be added to specify parameters that are required by the pipeline (sample age, age_at_diagnosis, etc.). Additionally, if the user wanted to remove any sample from the analysis, the corresponding row in the samplesheet can be filtered out to exclude it from the analysis. 
+- __Sample sheet__. When running the `complete` workflow, we recommend passing the array sample sheet. Custom columns can be added to specify parameters that are required by the pipeline (sample age, age_at_diagnosis, etc.). Additionally, if the user wanted to remove any sample from the analysis, the corresponding row in the sample sheet can be filtered out to exclude it from the analysis. 
 
   The pipeline will try to find how many "normal" or "control" samples exist to use them as controls for the CNV pipeline. You can provide the column name with the argument `--sample-type-col`. If no normals are found, this part of the pipeline will be skipped.
 
