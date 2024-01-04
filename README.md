@@ -2,16 +2,12 @@
 
 [![PyPI - Version](https://img.shields.io/pypi/v/phyfum.svg)](https://pypi.org/project/phyfum)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/phyfum.svg)](https://pypi.org/project/phyfum)
+[![GitBook Badge](https://img.shields.io/badge/GitBook-3884FF?logo=gitbook&logoColor=fff&style=plastic)](https://phyfum.gitbook.io/tutorial/)
 
------
 
-**Table of Contents**
+#### Visit our [GitBook](https://phyfum-1.gitbook.io/tutorial/) for a detailed tutorial of Phyfum
 
-- [Quick start](#quick-start)
-- [Installation](#installation)
-- [Preparing the sample sheet / metadata](#preparing-the-sample-sheet--metadata)
-- [License](#license)
-
+--- 
 ## Quick start
 
 Phyfum allows two different workflows. If you are working with raw data (IDAT files), you can run phyfum in __complete__ mode. In this mode, phyfum will preprocess the files with [minfi](https://bioconductor.org/packages/release/bioc/html/minfi.html). If needed and if both tumor and normal samples are available, it will also run a copy number analysis with [rascal](https://github.com/crukci-bioinformatics/rascal) to blacklist fCpGs located within copy-number-altered regions, which do not behave as the model expects.
