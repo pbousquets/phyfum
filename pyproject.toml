@@ -35,8 +35,8 @@ dependencies = [
 
 [project.urls]
 Documentation = "https://github.com/unknown/phyfum#readme"
-Issues = "https://github.com/unknown/phyfum/issues"
-Source = "https://github.com/unknown/phyfum"
+Issues = "https://github.com/pbousquets/phyfum/issues"
+Source = "https://github.com/pbousquets/phyfum"
 
 [project.scripts]
 phyfum = "phyfum.cli:phyfum"
