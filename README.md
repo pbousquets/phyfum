@@ -121,27 +121,17 @@ p_load_gh("crukci-bioinformatics/rascal")
 
 Phyfum relies on the Array Sample sheet for the __complete__ workflow and a custom metadata file for the __trees__  workflow. In any case, the file must be a comma-separated file (.csv). 
 
-- __Sample sheet__. Please, make sure you have a column called 'Basename', that leads to the idat files of each sample. For instance, suppose the folder tree of your array looks like this:
+- __Sample sheet__. When running the `complete` workflow, we recommend passing the samplesheet. Custom columns can be added to specify parameters that are required by the pipeline (sample age, age_at_diagnosis, etc.). Additionally, if the user wanted to remove any sample from the analysis, the corresponding row in the samplesheet can be filtered out to exclude it from the analysis. 
 
+{% note %}
 
-```
-├── 200360145522
-│   ├── 200360145522_R15C01_Grn.idat --> Sample: A
-│   ├── 2003601455222_R15C01_Red.idat --> Sample: A
-├── 200531490071
-│   ├── 200531490071_R02C01_Grn.idat
-│   ├── 200531490071_R02C01_Red.idat
-└── allSampleSheet.csv
-```
+**Note:** The pipeline will try to find how many "normal" or "control" samples exist to use them as controls for the CNV pipeline. You can provide the column name with the argument `--sample-type-col`. If no normals are found, this part of the pipeline will be skipped.
 
-The Basename for Sample A would be: _200360145522/200360145522_R15C01_. This is required by Minfi when it performs the matching of the IDAT files with the sample sheet metadata.
+{% endnote %}
 
-Additionally, the pipeline will try to find how many "normal" or "control" samples exist to use them as controls for the CNV pipeline. You can provide the column name with the argument `--sample-type-col`. If you don't have any normals, this part of the pipeline will be skipped.
-
-- __Custom metadata__. It doesn't require anything special as long as it is in CSV format. In order to identify what the columns are, you can use the arguments `--patient-col`, `--sample-col` and `age-col`, if the column names in your file are different from the defaults.
+- __Custom metadata__. Sample-wise file providing information about the sample age, patient, age_at_diagnosis, etc. It doesn't require anything special as long as it is in CSV format. In order to identify what the columns are, you can use the arguments `--patient-col`, `--sample-col` and `age-col`, if the column names in your file are different from the defaults.
 
 > Both the custom metadata and the sample sheet are passed through `--patientinfo`.
-
 
 
 ## License
