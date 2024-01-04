@@ -165,7 +165,7 @@ cli:
   singularity:
     type: bool
     help: "Run Phyfum on singularity"
-    default: true
+    default: false
     required: false
   workdir:
     type: path
