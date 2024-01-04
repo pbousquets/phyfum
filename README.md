@@ -123,11 +123,7 @@ Phyfum relies on the Array Sample sheet for the __complete__ workflow and a cust
 
 - __Sample sheet__. When running the `complete` workflow, we recommend passing the samplesheet. Custom columns can be added to specify parameters that are required by the pipeline (sample age, age_at_diagnosis, etc.). Additionally, if the user wanted to remove any sample from the analysis, the corresponding row in the samplesheet can be filtered out to exclude it from the analysis. 
 
-{% note %}
-
-**Note:** The pipeline will try to find how many "normal" or "control" samples exist to use them as controls for the CNV pipeline. You can provide the column name with the argument `--sample-type-col`. If no normals are found, this part of the pipeline will be skipped.
-
-{% endnote %}
+  The pipeline will try to find how many "normal" or "control" samples exist to use them as controls for the CNV pipeline. You can provide the column name with the argument `--sample-type-col`. If no normals are found, this part of the pipeline will be skipped.
 
 - __Custom metadata__. Sample-wise file providing information about the sample age, patient, age_at_diagnosis, etc. It doesn't require anything special as long as it is in CSV format. In order to identify what the columns are, you can use the arguments `--patient-col`, `--sample-col` and `age-col`, if the column names in your file are different from the defaults.
 
