@@ -58,6 +58,7 @@ def main():
     parser.add_argument("-c", "--crossreactivefile", required=True, help="path to csv file containing CpGs to exclude (default 13059_2016_1066_MOESM1_ESM.csv)")
     parser.add_argument("-b", "--basename", action="store_true", help="Use basename from EPIC sheet to infere the sample ")
     parser.add_argument("-P", "--patient_col", default="Patient", type=str, help="Name of the patient column in the patientinfofile (default Patient)")
+    parser.add_argument("-S", "--sample_col", default="Sample", type=str, help="Name of the sample column in the patientinfofile (default Patient)")
     parser.add_argument(
         "-t",
         "--tissue",
@@ -103,6 +104,7 @@ def main():
     tissue = args.tissue
     disease = args.disease
     patient_col = args.patient_col
+    sample_col = args.sample_col
 
     p = float(args.percent)
 
@@ -113,10 +115,9 @@ def main():
     M_all = pd.read_csv(methylatedfile, index_col=0)
     U_all = pd.read_csv(unmethylatedfile, index_col=0)
 
-    patientinfo = pd.read_csv(patientinfofile, index_col=0, keep_default_na=False)
-    if args.basename:  # if basename option is selected, split by "/" and take the last part. Then, update the patientinfo dataframe with the new index
-        indexes = patientinfo["Basename"].str.split("/").str[-1]
-        patientinfo.index = indexes
+    patientinfo = pd.read_csv(patientinfofile, keep_default_na=False, index_col=False)
+    indexes = patientinfo[sample_col]
+    patientinfo.index = indexes
 
     crossreactive = pd.read_csv(crossreactivefile, index_col=0)
     manifest = pd.read_csv(manifestfile, index_col=0, low_memory=False)
