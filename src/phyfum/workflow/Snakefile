@@ -48,9 +48,6 @@ activateCNV = False
 if mode == "trees":
     ruleorder: split_flucpgs_trees > split_flucpgs
 elif mode == "complete":
-    df["sample_basename"] = df["Basename"].str.split("/").str[-1]
-    SAMPLES = df.groupby(patient_col)["sample_basename"].agg(list)
-
     activateCNV = True if config.get("cnv") and df['Group'].str.lower().str.count('normal|control').sum() > 2 else False
 
     ruleorder: split_flucpgs > split_flucpgs_trees
@@ -74,12 +71,13 @@ rule readIDAT:
         directory("idat_processed"),
     params:
         name = config.get("output"),
-        readIDAT = readIDAT
+        readIDAT = readIDAT,
+        sample_col = sample_col
     threads:
         workflow.cores
     shell:
         """
-        Rscript {params.readIDAT} -i {input.dir} -o {output} -n {params.name} -p {input.samplesheet} -c {threads}
+        Rscript {params.readIDAT} -i {input.dir} -o {output} -n {params.name} -p {input.samplesheet} -c {threads} -s {params.sample_col}
         """
 
 rule callCNVs:
@@ -110,10 +108,11 @@ rule select_cpgs:
         patientInfo = config.get("patientInfo"),
         name = config.get("output"),
         patient_col = patient_col,
+        sample_col = sample_col,
         selectCpGs = selectCpGs
     shell:
         """
-        python3 {params.selectCpGs} -e {params.manifest} -p {params.percent} -c {crossreactivefile} {output} {input}/{params.name}.betas.csv {input}/{params.name}.M.csv {input}/{params.name}.U.csv {params.patientInfo} -P {params.patient_col} --basename
+        python3 {params.selectCpGs} -e {params.manifest} -p {params.percent} -c {crossreactivefile} {output} {input}/{params.name}.betas.csv {input}/{params.name}.M.csv {input}/{params.name}.U.csv {params.patientInfo} -P {params.patient_col} -S {params.sample_col}
         """
 
 rule force_cpgs:
@@ -158,7 +157,6 @@ checkpoint split_flucpgs_trees:
 def get_blacklists():
     files = [crossreactivefile]
     if activateCNV:
-        print("Adding CNV to blacklist")
         files.append(rules.callCNVs.output)
     
     if config.get("blacklist"):

@@ -27,7 +27,7 @@ cli:
   sample_col:
     type: str
     help: Column name for the samples in the metadata
-    default: Sample
+    default: Sample_Name
     required: false
   age_col:
     type: str

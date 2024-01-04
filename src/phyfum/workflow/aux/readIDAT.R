@@ -32,6 +32,12 @@ option_list <- list(
     type = "character",
     default = "myexperiment",
     help = "Experiment name (required,  [default: %default])"
+  ),
+  make_option(
+    c("--sample_col", "-s"),
+    type = "character",
+    default = "Sample_Name",
+    help = "Experiment name (required,  [default: %default])"
   )
 )
 
@@ -55,6 +61,7 @@ mc.cores <- opt$mc.cores
 patientInfo <- opt$patientInfo
 output <- opt$output
 name <- opt$name
+sample_col <- opt$sample_col
 rm(opt)
 
 if (!exists(output)) dir.create(output)
@@ -65,7 +72,8 @@ cli_alert_info("Reading the data")
 # Read raw data
 setwd(input_dir)
 
-targets = read.csv(patientInfo, header = T)
+targets=read.metharray.sheet(dirname(patientInfo), pattern = basename(patientInfo))
+
 rawData = read.metharray.exp(targets = targets, force = T, recursive = T) #Activate force in case there are samples with of different arrays
 
 setwd(outdir)
@@ -85,18 +93,27 @@ preprocessedDataMS = MethylSet(
 )
 
 cli_alert_info("Writing the final output!")
+names_order <- colnames(getBeta(preprocessedDataMS))
+sample_names <- colData(preprocessedData)[sample_col][names_order,]
 
-write.table(getBeta(preprocessedDataMS), file = paste0(name, ".betas.csv"),
+betas <- getBeta(preprocessedDataMS)
+colnames(betas) <- sample_names
+meth <- getMeth(preprocessedDataMS)
+colnames(meth) <- sample_names
+unmeth <- getUnmeth(preprocessedDataMS)
+colnames(unmeth) <- sample_names
+
+write.table(betas, file = paste0(name, ".betas.csv"),
             quote = F,
             sep = ",",
             row.names = T)
 
-write.table(getMeth(preprocessedDataMS), file = paste0(name, ".M.csv"),
+write.table(meth, file = paste0(name, ".M.csv"),
             quote = F,
             sep = ",",
             row.names = T)
 
-write.table(getUnmeth(preprocessedDataMS), file = paste0(name, ".U.csv"),
+write.table(unmeth, file = paste0(name, ".U.csv"),
             quote = F,
             sep = ",",
             row.names = T)
