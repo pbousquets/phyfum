@@ -162,11 +162,6 @@ cli:
     type: int
     help: Set a seed for BEAST. Make it negative to inactivate this parameter
     default: 123
-  singularity:
-    type: bool
-    help: "Run Phyfum on singularity"
-    default: false
-    required: false
   workdir:
     type: path
     help: "Path to the output directory"
