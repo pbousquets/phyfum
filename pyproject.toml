@@ -30,7 +30,10 @@ dependencies = [
   "typing",
   "pandas",
   "numpy",
-  "argparse" 
+  "argparse",
+  "scipy", 
+  "matplotlib",
+  "seaborn"
 ]
 
 [project.urls]

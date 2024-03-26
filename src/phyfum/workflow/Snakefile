@@ -15,16 +15,13 @@ validate(config, "config.schema.yml")
 
 workdir: config.get("workdir", ".")
 
-if config.get("singularity"):
-    ruleorder: beast > beast_nosingularity 
-else: 
-    ruleorder: beast_nosingularity > beast
-
 XMLgenerator = workflow.source_path("aux/methylationBetas2xml.py")
 _ = workflow.source_path("aux/createXML.py"), workflow.source_path("aux/readInputMethylation.py")
 readIDAT = workflow.source_path("aux/readIDAT.R")
 methCNV = workflow.source_path("aux/methCNV.R")
 selectCpGs = workflow.source_path("aux/select_cpgs.py")
+plot_tree = workflow.source_path("aux/plot_tree.R")
+plot_post = workflow.source_path("aux/plot_posterior_predictive.py")
 manifest = workflow.source_path("data/MethylationEPIC_v-1-0_B4.csv")
 crossreactivefile = workflow.source_path("data/13059_2016_1066_MOESM1_ESM.csv")
 
@@ -38,9 +35,11 @@ df = pd.read_csv(config.get("patientInfo"))
 df = checkPatientInfo(df, patient_col)
 PATIENTS = df[patient_col].unique()
 SAMPLES = df.groupby(patient_col)[sample_col].agg(list)
+AGES = df.groupby(patient_col)[age_col].max().to_dict()
 
 stemCellsSweep=config.get("stemCells").split("-")
 STEMCELLS=list(range(int(stemCellsSweep[0]), int(stemCellsSweep[1]), int(stemCellsSweep[2])))
+CHAIN_LENGTH = config.get("iterations", 750_000)
 
 mode = checkInput(config)
 activateCNV = False
@@ -61,7 +60,7 @@ else:
     ruleorder: select_cpgs > force_cpgs
 
 rule all:
-    input: expand("results/{patient}/{patient}.{stemcell}cells.{ext}", patient=PATIENTS, stemcell=STEMCELLS, ext = ["ops", "trees", "log"]) 
+    input: expand("results/{patient}/{patient}.{stemcell}cells.{ext}", patient=PATIENTS, stemcell=STEMCELLS, ext = ["ops", "trees", "log", "pdf", "posteriors.pdf"]) 
 
 rule readIDAT:
     input:
@@ -195,7 +194,7 @@ rule getXML:
         mu = config.get("mu", .1),
         gamma = config.get("gamma", .1),
         lam = config.get("lam", 1),
-        iterations = config.get("iterations", 750_000),
+        iterations = CHAIN_LENGTH,
         precision = config.get("precision", 6),
         sampling = config.get("sampling", 75),
         screenSampling = config.get("screenSampling", 500),
@@ -240,29 +239,43 @@ rule beast:
     shell:
         """
         out="results/{wildcards.patient}" && mkdir -p $out 
-        singularity run -B $(pwd):/mnt docker://rachelicr/pisca-branch-master {params.seed} {input} > {log} 2> {log}
-        for outfile in {output}
-        do
-            mv $(basename $outfile) $out
-        done
-        """
-
-rule beast_nosingularity:
-    input:
-        "results/XMLs/{patient}.{stemcell}cells.xml"
-    output:
-        multiext("results/{patient}/{patient}.{stemcell}cells", ".trees", ".log", ".ops")
-    log: 
-        "beast_logs/{patient}/{stemcell}cells/{patient}.run.log"
-    params: 
-        seed = f"-seed {config.get('seed')}" if config.get("seed") >= 0 else ""
-    shell:
-        """
-        out="results/{wildcards.patient}" && mkdir -p $out 
         beast -beagle_off {params.seed} {input} > {log} 2> {log}
 
         for outfile in {output}
         do
             mv $(basename $outfile) $out
         done
+        """
+
+rule plot_tree:
+    input:
+        trees = "results/{patient}/{patient}.{stemcell}cells.trees",
+        log = "results/{patient}/{patient}.{stemcell}cells.log",
+    output:
+        consensus = "results/{patient}/{patient}.{stemcell}cells.consensus.tree",
+        plot = "results/{patient}/{patient}.{stemcell}cells.pdf"
+    params:
+        plot_tree = plot_tree,
+        age = lambda wildcards: AGES[wildcards.patient],
+        burnin = int(config.get("burnin", CHAIN_LENGTH/10))
+    shell:
+        """
+        treeannotator -burnin {params.burnin} {input.trees} {output.consensus}
+        Rscript {params.plot_tree} {output.consensus} '{wildcards.patient} - {wildcards.stemcell} cells' {output.plot} 0.1 {params.age} {input.log}
+        """
+
+rule plot_posterior:
+    input:
+        minibetas = aggregate_input,
+        log = "results/{patient}/{patient}.{stemcell}cells.log",
+        patientInfo = config.get("patientInfo"),
+    params:
+        age_col = age_col,
+        sample_col = sample_col,
+        plot_post = plot_post
+    output: 
+        "results/{patient}/{patient}.{stemcell}cells.posteriors.pdf"
+    shell:
+        """
+        python3 {params.plot_post} --betas {input.minibetas} --log {input.log} --samplesheet {input.patientInfo} --age_col {params.age_col} --sample_col {params.sample_col} --cells {wildcards.stemcell} --output {output}
         """
