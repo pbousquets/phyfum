@@ -71,8 +71,7 @@ theseDataRaw <- rbindlist(lapply(files,FUN = function(thisFile){
   thisTable[,`:=`(S=thisS,cond=NULL)]
   }))
 
-theseData <- melt(theseDataRaw,id.vars = c("S"),variable.name = "method",value.name = "lML")
-theseData <- theseData[method!="AICm",] #We are not using AIC for now
+theseData <- theseDataRaw[method!="AICm",] #We are not using AIC for now
 
 if(theseData[method=="PP",.N]) warning("Stepping stone and/or path sampling lML estimates not found. This script will use the less-accurate harmonic mean estimator, which is generally recommended against. In our simulation results, it has performed as well as PS and SS for the specific task of finding the optimum S parameter.")
 
@@ -92,7 +91,7 @@ thePlot <- ggplot(theseData,aes(x=S,y=lML,color=method))+
   geom_smooth(alpha=0.2,linewidth=0.3) +
   geom_hline(data=theseThresholds,aes(yintercept=minY,color=method,linetype="BF10")) +
   scale_y_continuous(name="Marginal Likelihood Estimation (logL)",n.breaks=10) +
-  scale_x_continuous(n.breaks = 10,name="Number of stem cells (S)") +
+  scale_x_continuous(name="Number of stem cells (S)") +
   scale_color_brewer(name="Estimation\nmethod",type = "qual",palette = 6) +
   scale_linetype_manual(name=NULL,values=2)+
   theme_cowplot()

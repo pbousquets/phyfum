@@ -426,7 +426,7 @@ if(length(paramProblems)==0){
 }
 
 #MLE information
-mleTable <- data.table(cond=c(baseName),HME=c(thisLML),AICm=c(thisAICM))
+mleTable <- data.table(cond=c(baseName),method=c("HME","AICm"),lML=c(thisLML,thisAICM))
 MLEOutputFileName=paste0(outDir,"/",paste(sep=".",baseName,MLEOutputSuffix))
 write.csv(mleTable,file = MLEOutputFileName,quote = F,row.names = F)
 #######################################
