@@ -1,8 +1,6 @@
 suppressPackageStartupMessages({ 
-library(data.table)
-library(ggplot2)
-library(cowplot)
-library(ggbeeswarm)
+  library(pacman)
+  p_load(data.table, ggplot2, cowplot, ggbeeswarm)
 })
 
 #Hardcoded config
@@ -45,8 +43,7 @@ args <- commandArgs(trailingOnly = TRUE) #Comment for debugging, uncomment to ru
 #           paste(sep="/",inDir,"169flipflopS7/169flipflopS7.MLE.csv"),
 #           paste(sep="/",inDir,"169flipflopS8/169flipflopS8.MLE.csv"))
 #######################################
-
-if (length(args) <=3) {
+if (length(args) <3) {
   stop("Usage: script outDir runNameSX.csv ... runNameSN.csv")
 } else {
   ##ForPablo: Remove if we don't want this to be verbose
@@ -66,13 +63,12 @@ if(!all(file.exists(files))){
 #######################################
 theseDataRaw <- rbindlist(lapply(files,FUN = function(thisFile){
   thisS <- as.numeric(gsub(ncellsRegex,"\\1",basename(thisFile)))
-  if(is.na(thisS)) stop(sprintf("The number of stem cells used for file %s was not detected properly",thisFile))  ##ForPablo: This is probably only for development since this should not be modifiable by the user, right?
+  if(is.na(thisS)) stop(sprintf("The number of stem cells used for file %s was not detected properly",thisFile)) 
   thisTable <- fread(thisFile)
-  thisTable[,`:=`(S=thisS,cond=NULL)]
+  thisTable[,`:=`(S=thisS)]
   }))
 
 theseData <- theseDataRaw[method!="AICm",] #We are not using AIC for now
-
 if(theseData[method=="PP",.N]) warning("Stepping stone and/or path sampling lML estimates not found. This script will use the less-accurate harmonic mean estimator, which is generally recommended against. In our simulation results, it has performed as well as PS and SS for the specific task of finding the optimum S parameter.")
 
 #Data dump

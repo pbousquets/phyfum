@@ -8,15 +8,8 @@
 
 
 suppressWarnings({
-
-library(data.table)
-library(ggplot2)
-library(cowplot)
-library(treeio)
-library(ggtree)
-library(HDInterval)
-library(lubridate)
-library(svglite)
+library(pacman)
+p_load(data.table, ggplot2, cowplot, treeio, ggtree, HDInterval, lubridate, svglite)
 pdf(NULL)
 
 #Configuration

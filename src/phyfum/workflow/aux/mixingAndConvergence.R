@@ -1,12 +1,8 @@
-suppressPackageStartupMessages({ 
-  library(rwty) #ForPablo: Install my version instead of the official one --> https://github.com/adamallo/RWTY. library(devtools);install_github("https://github.com/adamallo/RWTY")
-  library(rstan)
-  library(LaplacesDemon)
-  library(ggplot2)
-  library(cowplot)
-  library(data.table)
-  library(ggrepel)
-})
+if (!require("pacman")) install.packages("pacman")
+library(pacman)
+p_load_gh("adamallo/rwty")
+p_load(rstan, LaplacesDemon, ggplot2, cowplot, ggrepel, data.table)
+
 
 #My functions
 #######################################
@@ -315,7 +311,7 @@ if(!all(file.exists(files))){
 #Preparing output
 #######################################
 baseName <- gsub(x = basename(files[1]),pattern = ".trees",replacement = "")
-outDir <- paste(sep="/",baseDir,baseName)
+outDir <- baseDir #paste(sep="/",baseDir,baseName)
 dir.create(outDir,recursive=T)
 print(paste0("Saving outputs in ",outDir)) #ForPablo: remove?
 #######################################
@@ -328,7 +324,6 @@ chains=invisible(lapply(files,FUN=function(x){
   if(!file.exists(logfile)) stop(sprintf("ERROR: logfile %s for tree file %s not found",logfile,x)) ##TODO this will not be visible because I am trying to mute the rest of the code in this section
   chain <- load.trees(x,format="BEAST",logfile = logfile);
   chain}))
-sink()
 nSamples=unique(lapply(chains,FUN=function(x){length(x$trees)}))
 if(length(nSamples) != 1){
   stop("ERROR: chains are not of the same length")
@@ -390,7 +385,6 @@ for (plotname in names(rwtyPlots[grep(".correlations",names(rwtyPlots),value = T
   print(rwtyPlots[[plotname]])
   dev.off()
 }
-sink()
 #######################################
 
 #Write output
@@ -430,3 +424,4 @@ mleTable <- data.table(cond=c(baseName),method=c("HME","AICm"),lML=c(thisLML,thi
 MLEOutputFileName=paste0(outDir,"/",paste(sep=".",baseName,MLEOutputSuffix))
 write.csv(mleTable,file = MLEOutputFileName,quote = F,row.names = F)
 #######################################
+sink()
