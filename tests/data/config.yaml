@@ -1,0 +1,3 @@
+input: tests/data
+output: test
+patientInfo: patientInfo.csv
