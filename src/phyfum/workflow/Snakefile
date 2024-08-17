@@ -258,8 +258,6 @@ rule qc:
     output:
         outdir = directory("results/{patient}/convergence/{patient}.{stemcell}cells/"),
         mle = "results/{patient}/convergence/{patient}.{stemcell}cells/{patient}.{stemcell}cells.MLE.csv" #Generated first with the first script and then we modify it with the second one
-    threads:
-        1 
     params:
         burnin = config.get("burnin", 0.1),
         gather_MLE = gather_MLE,
