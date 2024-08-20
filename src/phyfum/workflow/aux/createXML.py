@@ -233,9 +233,12 @@ class createXML:
                         self.doc.stag("coalescentLikelihood", idref="coalescent")
 
                         self.newSection("Cenancestor Prior on the height, since it is easier to have a meaningful prior on it (time of the initial development of the BE fragment)", addNewline=False)
-                        if not self.tree_settings.get("fixed_luca") or True: # TODO: important. Remove this when the bug at https://github.com/pbousquets/phyfum/issues/6 is solved
+                        if not self.tree_settings.get("fixed_luca"):
                             with self.tag("uniformPrior", **self.tree_settings.get("luca_height_prior")):
                                 self.doc.stag("parameter", idref="luca_height")
+                        if not self.tree_settings.get("fixed_luca") or True: # TODO: important. Remove this when the bug at https://github.com/pbousquets/phyfum/issues/6 is solved
+                            with self.tag("uniformPrior", **self.tree_settings.get("luca_height_prior")):
+                                self.doc.stag("parameter", idref="luca_branch")
 
                     with self.tag("likelihood", id="likelihood"):
                         self.doc.stag("cenancestorTreeLikelihood", idref="treeLikelihood")
