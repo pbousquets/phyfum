@@ -1,13 +1,22 @@
 # Phyfum
 
 [![PyPI - Version](https://img.shields.io/pypi/v/phyfum.svg)](https://pypi.org/project/phyfum)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/phyfum)
 [![PyPI - Python Version](https://img.shields.io/pypi/pyversions/phyfum.svg)](https://pypi.org/project/phyfum)
-[![GitBook Badge](https://img.shields.io/badge/GitBook-3884FF?logo=gitbook&logoColor=fff&style=plastic)](https://phyfum.gitbook.io/tutorial/)
+[![GitBook](https://img.shields.io/badge/GitBook-3884FF?logo=gitbook&logoColor=fff)](https://phyfum.gitbook.io/tutorial/)
+[![Docker Image Version](https://img.shields.io/docker/v/pbousquets/phyfum?logo=docker&link=)](https://hub.docker.com/r/pbousquets/phyfum)
+[![Docker Pulls](https://img.shields.io/docker/pulls/pbousquets/phyfum?logo=docker)](https://hub.docker.com/r/pbousquets/phyfum)
 
 
 #### Visit our [GitBook](https://phyfum-1.gitbook.io/tutorial/) for a detailed tutorial of Phyfum
-
 --- 
+
+Phyfum is a tool for inferring phylogenetic trees on methylation-based studies. We harness fluctuating CpG (fCpG) sites of methylation arrays to study the clonal evolution of samples. You can read more about fCpGs in the [original paper](https://www.nature.com/articles/s41587-021-01109-w). 
+
+We have implemented a phylogenetic model within [BEAST v.1.8.4](https://github.com/beast-dev/beast-mcmc) based on the original described in the above paper. We have also designed a snakemake-based pipeline, covering the IDAT preprocessing, fCpG calling, automatic XML generation and BEAST inference. Additionally, if both tumor and reference samples are available, CNVs are called to curate non-fluctuating CpGs.
+
+
+
 ## Quick start
 
 Phyfum allows two different workflows. If you are working with raw data (IDAT files), you can run phyfum in __complete__ mode. In this mode, phyfum will preprocess the files with [minfi](https://bioconductor.org/packages/release/bioc/html/minfi.html). If needed and if both tumor and normal samples are available, it will also run a copy number analysis with [rascal](https://github.com/crukci-bioinformatics/rascal) to blacklist fCpGs located within copy-number-altered regions, which do not behave as the model expects.
@@ -109,8 +118,9 @@ In order to preprocess IDAT files, we use minfi, conumee and rascal, as well as 
 
 ```{r}
 if (!require("pacman")) install.packages("pacman")
-p_load(optparse, cli, conumee, minfi, parallel, tibble, tidyr, dplyr, data.table, gtools)
-p_load_gh("crukci-bioinformatics/rascal")
+pacman::p_load(optparse, pacman, data.table, tibble, dplyr, tidyr, ggplot2, lubridate, BiocManager, gifski, gtools, ggrepel, cowplot, parallel, treeio, ggtree, svglite, ggbeeswarm, rstan, LaplacesDemon, HDInterval)
+pacman::p_load_gh('crukci-bioinformatics/rascal', 'adamallo/rwty')
+BiocManager::install('conumee'); BiocManager::install('minfi')
 ```
 
 ## Preparing the sample sheet / metadata
@@ -128,5 +138,5 @@ Phyfum relies on the Array Sample sheet for the __complete__ workflow and a cust
 
 ## License
 
-`phyfum` is distributed under the terms of the [CC-BY-NC-SA](https://spdx.org/licenses/MIT.html) license.
+`phyfum` is distributed under the terms of the [CC-BY-NC-SA](LICENSE.txt) license.
 
