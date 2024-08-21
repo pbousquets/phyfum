@@ -3,6 +3,11 @@ name: Publish to PyPI/Docker Hub
 on:
   push:
     branches: [ "main" ]
+    paths-ignore: 
+      - '.github/**'
+      - '.gitignore'
+      - 'LICENSE.txt'
+      - 'README.md'
 
 permissions:
   contents: read
