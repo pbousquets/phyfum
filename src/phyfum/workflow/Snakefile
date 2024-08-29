@@ -238,7 +238,7 @@ rule beast:
     output:
         files = multiext("results/{patient}/seed{seed}/{patient}.{stemcell}cells", ".trees", ".log", ".ops", ".MLE.log")
     log: 
-        "beast_logs/{patient}/{stemcell}cells/{patient}.{seed}.run.log"
+        "results/{patient}/beast_stdout/{patient}.{stemcell}cells.{seed}.stdout"
     params: 
         directory = "results/{patient}/seed{seed}",
         seed = "{seed}"
@@ -254,7 +254,7 @@ rule beast:
 rule qc:
     input:
         trees = expand("results/{{patient}}/seed{seed}/{{patient}}.{{stemcell}}cells.trees", seed = seeds),
-        logs = expand("results/{{patient}}/seed{seed}/{{patient}}.{{stemcell}}cells.log", seed = seeds) if NCHAINS == 1 else expand("results/{{patient}}/seed{seed}/{{patient}}.{{stemcell}}cells.MLE.log", seed = seeds),
+        logs = expand("results/{{patient}}/seed{seed}/{{patient}}.{{stemcell}}cells.log", seed = seeds) if NCHAINS == 1 else expand("results/{{patient}}/beast_stdout/{{patient}}.{{stemcell}}cells.{seed}.stdout", seed = seeds),
     output:
         outdir = directory("results/{patient}/convergence/{patient}.{stemcell}cells/"),
         mle = "results/{patient}/convergence/{patient}.{stemcell}cells/{patient}.{stemcell}cells.MLE.csv" #Generated first with the first script and then we modify it with the second one
@@ -299,15 +299,15 @@ rule logcombiner:
 
 rule plot_tree:
     input:
-        trees = rules.logcombiner.output.combined_trees,
-        log = rules.logcombiner.output.combined_logs,
+        trees = rules.logcombiner.output.combined_trees if NCHAINS > 1 else "results/{patient}/seed{seed}/{patient}.{stemcell}cells.trees", # cant user combiner when there's one single chain
+        log = rules.logcombiner.output.combined_logs if NCHAINS > 1 else "results/{patient}/seed{seed}/{patient}.{stemcell}cells.log",
     output:
         consensus = "results/{patient}/selected_model/{patient}.consensus.tree",
         plot = "results/{patient}/selected_model/{patient}.tree.pdf"
     params:
         plot_tree = plot_tree,
         age = lambda wildcards: AGES[wildcards.patient],
-        burnin = int(config.get("burnin", 0.1))
+        burnin = int(config.get("burnin", 0.1)) if NCHAINS == 1 else 0 # When multiple chains, logcombiner already applies the burnin
     shell:
         """
         treeannotator {input.trees} {output.consensus}
