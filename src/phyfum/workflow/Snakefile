@@ -48,6 +48,7 @@ CHAIN_LENGTH = config.get("iterations", 750_000)
 NCHAINS = config.get("nchains", 3)
 SEED = config.get("seed", random.randint(0, 100000))
 random.seed(SEED)
+
 seeds = [random.randint(0, 100000) for _ in range(NCHAINS)] if NCHAINS > 1 else SEED
 
 mode = checkInput(config)
@@ -66,6 +67,11 @@ if config.get("fcpgs"):
     ruleorder: force_cpgs > select_cpgs
 else:
     ruleorder: select_cpgs > force_cpgs
+
+if NCHAINS > 1:
+    ruleorder: logcombiner > logcombiner_one
+else:
+    ruleorder: logcombiner_one > logcombiner
 
 rule all:
     input: expand("results/{patient}/selected_model/{patient}.{ext}", patient=PATIENTS, ext = ["log", "consensus.tree", "tree.pdf", "posterior.pdf"])
@@ -236,7 +242,7 @@ rule beast:
     input:
         "results/XMLs/{patient}.{stemcell}cells.xml"
     output:
-        files = multiext("results/{patient}/seed{seed}/{patient}.{stemcell}cells", ".trees", ".log", ".ops", ".MLE.log")
+        multiext("results/{patient}/seed{seed}/{patient}.{stemcell}cells", ".trees", ".log", ".ops", ".MLE.log")
     log: 
         "results/{patient}/beast_stdout/{patient}.{stemcell}cells.{seed}.stdout"
     params: 
@@ -254,7 +260,7 @@ rule beast:
 rule qc:
     input:
         trees = expand("results/{{patient}}/seed{seed}/{{patient}}.{{stemcell}}cells.trees", seed = seeds),
-        logs = expand("results/{{patient}}/seed{seed}/{{patient}}.{{stemcell}}cells.log", seed = seeds) if NCHAINS == 1 else expand("results/{{patient}}/beast_stdout/{{patient}}.{{stemcell}}cells.{seed}.stdout", seed = seeds),
+        logs = expand("results/{{patient}}/seed{seed}/{{patient}}.{{stemcell}}cells.MLE.log", seed = seeds) if NCHAINS > 1 else expand("results/{{patient}}/beast_stdout/{{patient}}.{{stemcell}}cells.{seed}.stdout", seed = seeds),
     output:
         outdir = directory("results/{patient}/convergence/{patient}.{stemcell}cells/"),
         mle = "results/{patient}/convergence/{patient}.{stemcell}cells/{patient}.{stemcell}cells.MLE.csv" #Generated first with the first script and then we modify it with the second one
@@ -297,10 +303,28 @@ rule logcombiner:
         logcombiner -burnin {params.burnin} -trees $trees {output.combined_trees}
         """
 
+rule logcombiner_one:  #case where only one chain was run
+    input:
+        best = rules.model_selection.output.best,
+    output:
+        combined_logs = "results/{patient}/selected_model/{patient}.log",
+        combined_trees = "results/{patient}/selected_model/{patient}.trees"
+    params: 
+        burnin = int(config.get("burnin", 0.1)*CHAIN_LENGTH)
+    shell:
+        """
+        opt_cells=$(awk -F, 'NR==2 {{print $3}}' {input.best}) 
+        logs=$(ls results/{wildcards.patient}/seed*/{wildcards.patient}.${{opt_cells}}cells.log)
+        trees=$(ls results/{wildcards.patient}/seed*/{wildcards.patient}.${{opt_cells}}cells.trees)
+        grep -v ^"#" $logs > {output.combined_logs}
+        cp $trees {output.combined_trees}
+        """
+
+
 rule plot_tree:
     input:
-        trees = rules.logcombiner.output.combined_trees if NCHAINS > 1 else "results/{patient}/seed{seed}/{patient}.{stemcell}cells.trees", # cant user combiner when there's one single chain
-        log = rules.logcombiner.output.combined_logs if NCHAINS > 1 else "results/{patient}/seed{seed}/{patient}.{stemcell}cells.log",
+        trees = rules.logcombiner.output.combined_trees if NCHAINS > 1 else rules.logcombiner_one.output.combined_trees, # cant user combiner when there's one single chain. results/{patient}/seed{seed}/{patient}.{stemcell}cells.trees
+        log = rules.logcombiner.output.combined_logs if NCHAINS > 1 else rules.logcombiner_one.output.combined_logs # results/{patient}/seed{seed}/{patient}.{stemcell}cells.log
     output:
         consensus = "results/{patient}/selected_model/{patient}.consensus.tree",
         plot = "results/{patient}/selected_model/{patient}.tree.pdf"
@@ -317,7 +341,7 @@ rule plot_tree:
 rule plot_posterior:
     input:
         minibetas = lambda wildcards: aggregate_input(wildcards),
-        log = rules.logcombiner.output.combined_logs,
+        log = rules.logcombiner.output.combined_logs if NCHAINS > 1 else rules.logcombiner_one.output.combined_logs,
         patientInfo = config.get("patientInfo"),
         best = rules.model_selection.output.best
     params:
@@ -332,6 +356,6 @@ rule plot_posterior:
         python3 {params.plot_post} --betas {input.minibetas} --log {input.log} --samplesheet {input.patientInfo} --age_col {params.age_col} --sample_col {params.sample_col} --cells $opt_cells --output {output}
         """
 onsuccess:
-    shell("[[ -f Rplots.pdf ]] && rm Rplots.pdf") # This file is a bug from RWTY
+    shell("[[ -f Rplots.pdf ]] && rm Rplots.pdf || true") # This file is a bug from RWTY
 onerror: 
-    shell("[[ -f Rplots.pdf ]] && rm Rplots.pdf")
+    shell("[[ -f Rplots.pdf ]] && rm Rplots.pdf || true")
