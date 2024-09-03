@@ -252,7 +252,7 @@ rule beast:
         """
         log=$(realpath {log})
         input=$(realpath {input})
-        cd {params.directory}
+        cd {params.directory} || (mkdir {params.directory} && cd {params.directory})
         beast -beagle_off -seed {params.seed} $input > $log 2> $log
         """
 
