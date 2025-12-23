@@ -194,6 +194,14 @@ public class CenancestorTreeLikelihood extends AbstractTreeLikelihood {
                         coreName = "Java cenancestor FlipFlop with budding";
                         cenancestorlikelihoodCore = new BuddingCenancestorLikelihoodCore(patternList.getStateCount());
                         break;
+                    case CenancestorTreeLikelihoodParser.FISSION:
+                        coreName = "Java cenancestor FlipFlop with fission";
+                        cenancestorlikelihoodCore = new FissionCenancestorLikelihoodCore(patternList.getStateCount());
+                        break;
+                    case CenancestorTreeLikelihoodParser.SPLIT:
+                        coreName = "Java cenancestor FlipFlop with split fission";
+                        cenancestorlikelihoodCore = new SplitFissionCenancestorLikelihoodCore(patternList.getStateCount());
+                        break;
                     default:
                         coreName = "Java cenancestor FlipFlop";
                         cenancestorlikelihoodCore = new GeneralCenancestorLikelihoodCore(patternList.getStateCount());
@@ -267,6 +275,7 @@ public class CenancestorTreeLikelihood extends AbstractTreeLikelihood {
             probabilities = new double[stateCount * stateCount];
 
             cenancestorlikelihoodCore.initialize(nodeCount, patternCount, categoryCount, integrateAcrossCategories);
+            cenancestorlikelihoodCore.overridableInitialization();
 
             int extNodeCount = treeModel.getExternalNodeCount();
             int intNodeCount = treeModel.getInternalNodeCount();

@@ -579,5 +579,7 @@ public class GeneralCenancestorLikelihoodCore extends AbstractCenancestorLikelih
         }
     }
 
+    public void overridableInitialization() {
+    }
 }
 

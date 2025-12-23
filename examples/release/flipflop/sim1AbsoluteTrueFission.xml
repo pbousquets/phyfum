@@ -161,7 +161,7 @@
 	</flipflopCenancestorFrequency>
 	-->
 	<!-- DM TODO: this is not compatible with Ambiguities for now -->
-	<cenancestorTreeLikelihood id="treeLikelihood" useAmbiguities="false" heightRules="true">
+	<cenancestorTreeLikelihood id="treeLikelihood" useAmbiguities="false" heightRules="true" divisionModel="fission">
 		<patterns idref="alignment"/>
 		<treeModel idref="treeModel"/>
 		<siteModel idref="siteModel"/>
@@ -245,7 +245,7 @@
 	</operators>
 	
 	<!-- Define MCMC                                                             -->
-	<mcmc id="mcmc" chainLength="0" autoOptimize="true" operatorAnalysis="sim1AbsoluteTrueS6.ops">
+	<mcmc id="mcmc" chainLength="0" autoOptimize="true" operatorAnalysis="sim1AbsoluteTrueS6Fission.ops">
 		<posterior id="posterior">
 			<prior id="prior">
 				<!-- Error -->
@@ -310,7 +310,7 @@
 		</log>
 	
 		<!-- write log to file                                                       -->
-		<log id="fileLog" logEvery="1" fileName="sim1AbsoluteTrueS6.log" overwrite="false">
+		<log id="fileLog" logEvery="1" fileName="sim1AbsoluteTrueS6Fission.log" overwrite="false">
 			<posterior idref="posterior"/>
 			<prior idref="prior"/>
 			<likelihood idref="likelihood"/>
@@ -330,7 +330,7 @@
 		</log>
 	
 		<!-- write tree log to file                                                  -->
-		<logTree id="treeFileLog" logEvery="1" nexusFormat="true" fileName="sim1AbsoluteTrueS6.trees" sortTranslationTable="true">
+		<logTree id="treeFileLog" logEvery="1" nexusFormat="true" fileName="sim1AbsoluteTrueS6Fission.trees" sortTranslationTable="true">
 			<treeModel idref="treeModel"/>
 		</logTree>
 	</mcmc>

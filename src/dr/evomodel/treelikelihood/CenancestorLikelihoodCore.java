@@ -38,6 +38,12 @@ import dr.evomodel.treelikelihood.LikelihoodCore;
 public interface CenancestorLikelihoodCore extends LikelihoodCore {
 
     /**
+     * Overrideable initialization
+     */
+
+    void overridableInitialization();
+
+    /**
      * Calculates partial likelihoods at a node with only one child
      *
      * @param nodeIndex1 the 'child 1' node

@@ -61,8 +61,10 @@ public class CenancestorTreeLikelihoodParser extends AbstractXMLObjectParser {
     public static final String HEIGHT_RULES = "heightRules";
     public static final String DIVISION_MODEL = "divisionModel";
     //Division models
-    public static final String CLONING = "cloning";
+    public static final String IDENTITY = "identity";
     public static final String BUDDING = "budding";
+    public static final String FISSION = "fission";
+    public static final String SPLIT = "split";
 
     public String getParserName() {
         return TREE_LIKELIHOOD;
@@ -106,7 +108,7 @@ public class CenancestorTreeLikelihoodParser extends AbstractXMLObjectParser {
         String division_model = "default";
         if (xo.hasAttribute(DIVISION_MODEL)) {
             division_model = (String) xo.getAttribute(DIVISION_MODEL);
-            Set<String> allowed = new HashSet<>(Arrays.asList(CLONING, BUDDING));
+            Set<String> allowed = new HashSet<>(Arrays.asList(IDENTITY, BUDDING, FISSION, SPLIT));
 
             if (!allowed.contains(division_model)) {
                 Logger.getLogger("dr.evolution").info("\nWARNING: cenancestorTreeLikelihood division model " +
@@ -164,7 +166,7 @@ public class CenancestorTreeLikelihoodParser extends AbstractXMLObjectParser {
                     new XMLSyntaxRule[]{new ElementRule(Parameter.class)}, true),
             new ElementRule(CENANCESTOR_BRANCH,
                     new XMLSyntaxRule[]{new ElementRule(Parameter.class)}, true),
-            new StringAttributeRule(DIVISION_MODEL, "Crypt division model", new String[]{CLONING,BUDDING}, true),
+            new StringAttributeRule(DIVISION_MODEL, "Crypt division model", new String[]{IDENTITY,BUDDING,FISSION,SPLIT}, true),
             //new ElementRule(USE_AS_STATISTIC,
             //new XMLSyntaxRule[]{new ElementRule(Parameter.class)},true),
     };
