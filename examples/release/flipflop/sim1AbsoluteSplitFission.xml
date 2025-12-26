@@ -239,7 +239,7 @@
 	</operators>
 	
 	<!-- Define MCMC                                                             -->
-	<mcmc id="mcmc" chainLength="750000" autoOptimize="true" operatorAnalysis="sim1AbsoluteFission.ops">
+	<mcmc id="mcmc" chainLength="750000" autoOptimize="true" operatorAnalysis="sim1AbsoluteSplitFission.ops">
 		<posterior id="posterior">
 			<prior id="prior">
 				<!-- Error -->
@@ -304,7 +304,7 @@
 		</log>
 	
 		<!-- write log to file                                                       -->
-		<log id="fileLog" logEvery="75" fileName="sim1AbsoluteFission.log" overwrite="false">
+		<log id="fileLog" logEvery="75" fileName="sim1AbsoluteSplitFission.log" overwrite="false">
 			<posterior idref="posterior"/>
 			<prior idref="prior"/>
 			<likelihood idref="likelihood"/>
@@ -324,7 +324,7 @@
 		</log>
 	
 		<!-- write tree log to file                                                  -->
-		<logTree id="treeFileLog" logEvery="75" nexusFormat="true" fileName="sim1AbsoluteFission.trees" sortTranslationTable="true">
+		<logTree id="treeFileLog" logEvery="75" nexusFormat="true" fileName="sim1AbsoluteSplitFission.trees" sortTranslationTable="true">
 			<treeModel idref="treeModel"/>
 		</logTree>
 	</mcmc>

@@ -25,9 +25,7 @@
 
 package dr.evomodel.treelikelihood;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
 import dr.math.ThreeVHypergeometricDistribution;
 
@@ -169,7 +167,6 @@ public class SplitFissionCenancestorLikelihoodCore extends FissionCenancestorLik
         //state loop that calculates the multivariate hypergeometric combinations and probabilities and stores them
         //in the proper arrays
         //helpers for readability
-        int k0,m0,k1,m1;
         iState = 0;
         for (int m = 0; m <= S; m++){
             for (int k = 0; k+m <= S; k++){
@@ -180,7 +177,7 @@ public class SplitFissionCenancestorLikelihoodCore extends FissionCenancestorLik
                     iStateCombs = new ThreeVHypergeometricDistribution(S - k - m, k, m, (int) ceil(S/2.0)); //Large daughter
 
                     //getters
-                    iStateSplitFissionCombs = new SplitFissionCombinations(iStateCombs); //They need to be halved at some point since the large daughter may be A or B
+                    iStateSplitFissionCombs = new SplitFissionCombinations(iStateCombs);
                     iStateCounts = iStateSplitFissionCombs.getCounts();
                     this.pFiss[iState] = iStateSplitFissionCombs.getProbs();
 
@@ -189,7 +186,6 @@ public class SplitFissionCenancestorLikelihoodCore extends FissionCenancestorLik
 
                     // translating counts given by k and m into states
                     for (int iFiss = 0; iFiss < iStateCounts.length; iFiss++) {
-
                         this.combFiss[iState][0][iFiss] = varState[iStateCounts[iFiss][0][1]][iStateCounts[iFiss][0][2]];
                         this.combFiss[iState][1][iFiss] = varState[iStateCounts[iFiss][1][1]][iStateCounts[iFiss][1][2]];
                     }
@@ -223,17 +219,16 @@ public class SplitFissionCenancestorLikelihoodCore extends FissionCenancestorLik
             int St0b = (int) floor(S/2.0)*2; //Number of cells in the small stem cell niche after split and duplication, secondary duplication of 1
 
             //Helpers
-            int nValidA,nValidB;
             int [] countsB = new int[3];
             int [] modCountsA = new int[3];
             int [] modCountsB = new int[3];
-            int [] countsA;
+            int [] countsA = new int[3];
             double lp;
 
             //For each 3DHypergeometric distribution (split options) we calculate all possible alternative adjustments
             //(i.e., gain of 1 cell in the small subpopulation, loss of 1 in the big
             for (int iComb = 0; iComb < iLps.length; iComb++){
-                countsA = iCombs[iComb];
+                System.arraycopy(iCombs[iComb],0,countsA,0,iCombs[iComb].length);
 
                 for (int iCount = 0; iCount < countsA.length; iCount++) {
                     countsB[iCount] = (Ka[iCount] - countsA[iCount]) * 2; //Number of d,k,m cells in the small subpopulation after doubling
@@ -244,6 +239,7 @@ public class SplitFissionCenancestorLikelihoodCore extends FissionCenancestorLik
                     if(countsA[iCountA]==0) {
                         continue;
                     } else {
+                        modCountsA = new int[3];
                         System.arraycopy(countsA,0,modCountsA,0,countsA.length);
                         modCountsA[iCountA] -= 1; //Remove one cell
                     }
@@ -251,6 +247,7 @@ public class SplitFissionCenancestorLikelihoodCore extends FissionCenancestorLik
                         if(countsB[iCountB]==0){
                             continue;
                         } else {
+                            modCountsB = new int[3];
                             System.arraycopy(countsB,0,modCountsB,0,countsB.length);
                             modCountsB[iCountB] += 1; //Add one cell
                         }
@@ -258,7 +255,7 @@ public class SplitFissionCenancestorLikelihoodCore extends FissionCenancestorLik
                         //Add the calculated combinations
                         combsBuilderA.add(modCountsA);
                         combsBuilderB.add(modCountsB);
-                        lp = Math.log(0.5)+Math.log(countsA[iCountA]/(double)St0a)+Math.log(countsB[iCountB]/(double)St0b); //1/2 of the two possibilities of assigning big/small S to each daughter lineage
+                        lp = Math.log(0.5)+iLps[iComb]+Math.log(countsA[iCountA]/(double)St0a)+Math.log(countsB[iCountB]/(double)St0b); //1/2 of the two possibilities of assigning big/small S to each daughter lineage * split prob * rearrangement prob A * rearrangement prob B
                         lpsBuilder.add(lp);
 
                         //Add the same combination reversed, so that A is the small and B is the big
@@ -279,6 +276,8 @@ public class SplitFissionCenancestorLikelihoodCore extends FissionCenancestorLik
                 this.logProbs[iComb] = lpsBuilder.get(iComb);
             }
         }
+
+        //TODO split fission combinations generate repeated combinations. I should do an extra pass to aggregate it, it should increase speed and may improve numerical stability
 
         /** deep copy to avoid external mutation */
         public int[][][] getCounts() { return deepCopyCounts(counts); }
