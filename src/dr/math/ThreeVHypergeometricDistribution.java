@@ -107,6 +107,9 @@ public class ThreeVHypergeometricDistribution {
     /** exact denominator */
     public BigInteger getDenominator() { return denomExact; }
 
+    /** counts in the original collection */
+    public int[] getCollection() { return new int[]{K1,K2,K3};}
+
     // HELPERS
 
     private static int nonNeg(int v) {

@@ -162,7 +162,7 @@
 	</flipflopCenancestorFrequency>
 	-->
 	<!-- DM TODO: this is not compatible with Ambiguities for now -->
-	<cenancestorTreeLikelihood id="treeLikelihood" useAmbiguities="false" heightRules="true" divisionModel="budding">
+	<cenancestorTreeLikelihood id="treeLikelihood" useAmbiguities="false" heightRules="true" divisionModel="fission">
 		<patterns idref="alignment"/>
 		<treeModel idref="treeModel"/>
 		<siteModel idref="siteModel"/>

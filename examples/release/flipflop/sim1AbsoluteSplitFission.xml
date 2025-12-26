@@ -51,13 +51,13 @@
 			<parameter idref="alignment.stemCells"/>
 		</stemCells>
 		<deltaOffset>
-			<parameter id="errorModel.deltaOffset" value="0.05" lower="0.0" upper="1.0"/>
+			<parameter id="errorModel.deltaOffset" value="0.2" lower="0.0" upper="1.0"/>
 		</deltaOffset>
 		<etaOffset>
-			<parameter id="errorModel.etaOffset" value="0.93" lower="0.0" upper="1.0"/>
+			<parameter id="errorModel.etaOffset" value="0.7" lower="0.0" upper="1.0"/>
 		</etaOffset>
 		<kappaScale>
-			<parameter id="errorModel.kappaScale" value="100" lower="0.0"/>
+			<parameter id="errorModel.kappaScale" value="50" lower="0.0"/>
 		</kappaScale>
 	</AFsequenceErrorModel>
 
@@ -80,14 +80,15 @@
 	<!-- throughout the time spanned by the genealogy.                           -->
 	<constantSize id="constant" units="years">
 		<populationSize>
-			<parameter id="constant.popSize" value="25" lower="0.0"/>
+			<parameter id="constant.popSize" value="1" lower="0.0"/>
 		</populationSize>
 	</constantSize>
 	
-	<!-- True tree -->
-	<newick id="startingTree">
-		((A:15,B:15):20,(C:25,(D:5,E:5):20):10);
-	</newick>
+	<!-- Generate a random starting tree under the coalescent process            -->
+	<coalescentSimulator id="startingTree">
+		<taxa idref="taxa"/>
+		<constantSize idref="constant"/>
+	</coalescentSimulator>
 	
 	<!-- Generate a tree model                                  -->
 	<treeModel id="treeModel">
@@ -127,13 +128,13 @@
 			<parameter idref="alignment.stemCells"/>
         </stemCells>
         <mu>
-            <parameter id="flipflop.mu" value="0.03" lower="0.0"/>
+            <parameter id="flipflop.mu" value="0.1" lower="0.0"/>
         </mu>
         <gamma>
-            <parameter id="flipflop.gamma" value="0.03" lower="0.0"/>
+            <parameter id="flipflop.gamma" value="0.1" lower="0.0"/>
         </gamma>
         <lambda>
-            <parameter id="flipflop.lambda" value="1.3" lower="0.0"/>
+            <parameter id="flipflop.lambda" value="1" lower="0.0"/>
 		</lambda>
 	</flipflopModel>
 	
@@ -171,7 +172,8 @@
 			<parameter id="luca_height" value="45"/>
 		</cenancestorHeight>
 		<cenancestorBranch>
-			<parameter id="luca_branch" value="10" upper="45.0" lower="0.0"/>
+			<parameter id="luca_branch" value="1" upper="45.0" lower="0.0"/>
+			<!-- Value 1 as a safe starting value -->
 		</cenancestorBranch>
 		<strictClockCenancestorBranchRates idref="branchRates"/>
 	</cenancestorTreeLikelihood>
@@ -199,14 +201,6 @@
 		<scaleOperator scaleFactor="0.9" weight="0.5">
 	                <parameter idref="flipflop.lambda"/>
 		</scaleOperator>
-		
-		<!-- Clock -->
-		<!--
-		<scaleOperator scaleFactor="0.5" weight="10.0">
-			<parameter idref="clock.rate"/>
-		</scaleOperator>
-		-->
-
 		
 		<!-- Demography -->
 		<scaleOperator scaleFactor="0.2" weight="3.0">
@@ -245,7 +239,7 @@
 	</operators>
 	
 	<!-- Define MCMC                                                             -->
-	<mcmc id="mcmc" chainLength="0" autoOptimize="true" operatorAnalysis="sim1AbsoluteTrueSplitfission.ops">
+	<mcmc id="mcmc" chainLength="750000" autoOptimize="true" operatorAnalysis="sim1AbsoluteFission.ops">
 		<posterior id="posterior">
 			<prior id="prior">
 				<!-- Error -->
@@ -297,7 +291,7 @@
 		<operators idref="operators"/>
 	
 		<!-- write log to screen                                                     -->
-		<log id="screenLog" logEvery="1">
+		<log id="screenLog" logEvery="75">
 			<column label="Posterior" dp="4" width="12">
 				<posterior idref="posterior"/>
 			</column>
@@ -310,7 +304,7 @@
 		</log>
 	
 		<!-- write log to file                                                       -->
-		<log id="fileLog" logEvery="1" fileName="sim1AbsoluteTrueSplitfission.log" overwrite="false">
+		<log id="fileLog" logEvery="75" fileName="sim1AbsoluteFission.log" overwrite="false">
 			<posterior idref="posterior"/>
 			<prior idref="prior"/>
 			<likelihood idref="likelihood"/>
@@ -330,7 +324,7 @@
 		</log>
 	
 		<!-- write tree log to file                                                  -->
-		<logTree id="treeFileLog" logEvery="1" nexusFormat="true" fileName="sim1AbsoluteTrueSplitfission.trees" sortTranslationTable="true">
+		<logTree id="treeFileLog" logEvery="75" nexusFormat="true" fileName="sim1AbsoluteFission.trees" sortTranslationTable="true">
 			<treeModel idref="treeModel"/>
 		</logTree>
 	</mcmc>
