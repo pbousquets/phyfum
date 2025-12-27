@@ -178,6 +178,7 @@ public class SplitFissionCenancestorLikelihoodCore extends FissionCenancestorLik
 
                     //getters
                     iStateSplitFissionCombs = new SplitFissionCombinations(iStateCombs);
+                    iStateSplitFissionCombs.simplify();
                     iStateCounts = iStateSplitFissionCombs.getCounts();
                     this.pFiss[iState] = iStateSplitFissionCombs.getProbs();
 
@@ -197,7 +198,7 @@ public class SplitFissionCenancestorLikelihoodCore extends FissionCenancestorLik
 
     private static class SplitFissionCombinations {
 
-        int [][][] counts;
+        int [][][] counts;//[combination][daughter]{d,k,m}
         double [] logProbs;
         static final double precission = 1e-16;
 
@@ -277,8 +278,6 @@ public class SplitFissionCenancestorLikelihoodCore extends FissionCenancestorLik
             }
         }
 
-        //TODO split fission combinations generate repeated combinations. I should do an extra pass to aggregate it, it should increase speed and may improve numerical stability
-
         /** deep copy to avoid external mutation */
         public int[][][] getCounts() { return deepCopyCounts(counts); }
 
@@ -312,6 +311,99 @@ public class SplitFissionCenancestorLikelihoodCore extends FissionCenancestorLik
             if (err > precission && sum > 0.0) {
                 for (int i = 0; i < probs.length; i++) probs[i] /= sum;
             }
+        }
+
+        public void simplify(){
+            Map<CombKey, List<Double>> uniqueCounts = new HashMap<>();
+            CombKey countKey;
+
+            for (int iCount =0; iCount < this.counts.length; iCount++) {
+                countKey = new CombKey(this.counts[iCount][0],this.counts[iCount][1],this.logProbs[iCount]);
+                uniqueCounts.computeIfAbsent(countKey, k -> new ArrayList<>()).add(countKey.getLp());
+            }
+
+            int[][][] finalCombs = new int[uniqueCounts.size()][2][3];
+            double[] finalLps = new double[uniqueCounts.size()];
+
+            int iComb=0;
+            for (var e : uniqueCounts.entrySet()) {
+                finalCombs[iComb][0] = e.getKey().getA();
+                finalCombs[iComb][1] = e.getKey().getB();
+                finalLps[iComb] = logSumList(e.getValue());
+                iComb++;
+            }
+
+            this.counts = finalCombs;
+            this.logProbs = finalLps;
+
+        }
+
+        //Helper class to hash int arrays and compare them by value for simplify
+        private static class CombKey {
+            private final int [] cArray;
+            private final int Alength;
+            private final int Blength;
+            private final double lp;
+
+            public CombKey(int[] arrayA, int[] arrayB, double lp){
+                this.cArray = new int[arrayA.length+arrayB.length];
+                System.arraycopy(arrayA,0,this.cArray,0,arrayA.length);
+                System.arraycopy(arrayB,0,this.cArray,arrayA.length,arrayB.length);
+                this.Alength = arrayA.length;
+                this.Blength = arrayB.length;
+                this.lp = lp;
+            }
+
+            public int [] getArray() {
+                int [] retArray = new int [this.cArray.length];
+                System.arraycopy(this.cArray,0,retArray,0,this.cArray.length);
+                return(retArray);
+            }
+
+            public int [] getA() {
+                int [] A = new int[this.Alength];
+                System.arraycopy(this.cArray,0,A,0,this.Alength);
+                return(A);
+            }
+
+            public int [] getB() {
+                int [] B = new int [this.Blength];
+                System.arraycopy(this.cArray,this.Alength,B,0,this.Blength);
+                return(B);
+            }
+
+            public double getLp(){
+                return(this.lp);
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                if (this == o) return true;
+                if (!(o instanceof CombKey)) return false;
+                CombKey other = (CombKey) o;
+                return Arrays.equals(this.cArray, other.getArray());
+            }
+
+            @Override
+            public int hashCode() {
+                return Arrays.hashCode(this.cArray);
+            }
+        }
+
+        static double logAdd(double a, double b) {
+            // returns log(e^a + e^b) robustly
+            if (Double.isInfinite(a) && a < 0) return b; // -Inf + b => b
+            if (Double.isInfinite(b) && b < 0) return a;
+            if (a < b) { double t = a; a = b; b = t; } // ensure a >= b
+            return a + Math.log1p(Math.exp(b - a));
+        }
+
+        static double logSumList(List<Double> logps) {
+            double acc = Double.NEGATIVE_INFINITY; // log(0)
+            for (double lp : logps) {
+                acc = logAdd(acc, lp);
+            }
+            return acc; // log(sum of probabilities)
         }
     }
 }
