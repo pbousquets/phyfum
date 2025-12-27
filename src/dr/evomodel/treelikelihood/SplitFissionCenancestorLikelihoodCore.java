@@ -326,7 +326,7 @@ public class SplitFissionCenancestorLikelihoodCore extends FissionCenancestorLik
             double[] finalLps = new double[uniqueCounts.size()];
 
             int iComb=0;
-            for (var e : uniqueCounts.entrySet()) {
+            for (Map.Entry<CombKey, List<Double>> e : uniqueCounts.entrySet()) {
                 finalCombs[iComb][0] = e.getKey().getA();
                 finalCombs[iComb][1] = e.getKey().getB();
                 finalLps[iComb] = logSumList(e.getValue());
