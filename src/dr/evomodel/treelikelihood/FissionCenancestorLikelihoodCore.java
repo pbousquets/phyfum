@@ -90,8 +90,7 @@ public class FissionCenancestorLikelihoodCore extends GeneralCenancestorLikeliho
                     }
                 }
 
-                //Calculate the partials for the paternal node, taking into account budding combinations
-                //For other implementations this will be a double loop, but for budding it is always 3 so I am doing it manually
+                //Calculate the partials for the paternal node, taking into account all possible combinations of starting states for the daughter lineages
                 for (int iState = 0; iState < stateCount; iState++) {
                     partials3[u] = 0;
                     for (int iFission = 0; iFission < combFiss[iState][0].length; iFission++) {
@@ -131,8 +130,7 @@ public class FissionCenancestorLikelihoodCore extends GeneralCenancestorLikeliho
                 }
             }
 
-            //Calculate the partials for the paternal node, taking into account budding combinations
-            //For other implementations this will be a double loop, but for budding it is always 3 so I am doing it manually
+            //Calculate the partials for the paternal node, taking into account all possible combinations of starting states for the daughter lineages
             for (int iState = 0; iState < stateCount; iState++) {
                 partials3[u] = 0;
                 for (int iFission = 0; iFission < combFiss[iState][0].length; iFission++) {
