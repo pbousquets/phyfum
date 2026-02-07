@@ -200,14 +200,20 @@ public class SplitFissionCenancestorLikelihoodCore extends FissionCenancestorLik
 
         int [][][] counts;//[combination][daughter]{d,k,m}
         double [] logProbs;
+        double [] splitLogProbs;
         static final double precission = 1e-16;
 
         public SplitFissionCombinations(ThreeVHypergeometricDistribution iDistLarge) {
+            this(iDistLarge, true);
+        }
+
+        public SplitFissionCombinations(ThreeVHypergeometricDistribution iDistLarge, boolean simplify) {
             int [][] iCombs = iDistLarge.getCounts();
             double [] iLps = iDistLarge.getLogProbs();
             List<int[]> combsBuilderA = new ArrayList<>();
             List<int[]> combsBuilderB = new ArrayList<>();
             List<Double> lpsBuilder = new ArrayList<>();
+            List<Double> splitLpsBuilder = new ArrayList<>();
 
             int [] Ka = iDistLarge.getCollection();
 
@@ -258,11 +264,13 @@ public class SplitFissionCenancestorLikelihoodCore extends FissionCenancestorLik
                         combsBuilderB.add(modCountsB);
                         lp = Math.log(0.5)+iLps[iComb]+Math.log(countsA[iCountA]/(double)St0a)+Math.log(countsB[iCountB]/(double)St0b); //1/2 of the two possibilities of assigning big/small S to each daughter lineage * split prob * rearrangement prob A * rearrangement prob B
                         lpsBuilder.add(lp);
+                        splitLpsBuilder.add(iLps[iComb]);
 
                         //Add the same combination reversed, so that A is the small and B is the big
                         combsBuilderA.add(modCountsB);
                         combsBuilderB.add(modCountsA);
                         lpsBuilder.add(lp);
+                        splitLpsBuilder.add(iLps[iComb]);
                     }
                 }
             }
@@ -270,11 +278,17 @@ public class SplitFissionCenancestorLikelihoodCore extends FissionCenancestorLik
             int n = combsBuilderA.size();
             this.counts = new int[n][2][3];
             this.logProbs = new double[n];
+            this.splitLogProbs = new double[n];
 
             for (int iComb = 0; iComb < n; iComb++) {
                 System.arraycopy(combsBuilderA.get(iComb), 0, this.counts[iComb][0], 0, 3);
                 System.arraycopy(combsBuilderB.get(iComb), 0, this.counts[iComb][1], 0, 3);
                 this.logProbs[iComb] = lpsBuilder.get(iComb);
+                this.splitLogProbs[iComb] = splitLpsBuilder.get(iComb);
+            }
+
+            if (simplify) {
+                simplify();
             }
         }
 
@@ -294,6 +308,19 @@ public class SplitFissionCenancestorLikelihoodCore extends FissionCenancestorLik
 
         /** natural-log probabilities */
         public double[] getLogProbs() { return logProbs.clone(); }
+
+        /** natural-log probabilities of the split (ThreeVHypergeometricDistribution), may be null after simplify */
+        public double[] getSplitLogProbs() { return splitLogProbs == null ? null : splitLogProbs.clone(); }
+
+        /** probabilities of the split (ThreeVHypergeometricDistribution), may be null after simplify */
+        public double[] getSplitProbs() {
+            if (splitLogProbs == null) return null;
+            double[] p = new double[splitLogProbs.length];
+            for (int i = 0; i < splitLogProbs.length; i++) {
+                p[i] = Math.exp(splitLogProbs[i]);
+            }
+            return p;
+        }
 
         private static int[][][] deepCopyCounts(int[][][] src) {
             int[][][] dst = new int[src.length][2][3];
@@ -335,6 +362,7 @@ public class SplitFissionCenancestorLikelihoodCore extends FissionCenancestorLik
 
             this.counts = finalCombs;
             this.logProbs = finalLps;
+            this.splitLogProbs = null;
 
         }
 
@@ -406,5 +434,149 @@ public class SplitFissionCenancestorLikelihoodCore extends FissionCenancestorLik
             return acc; // log(sum of probabilities)
         }
     }
-}
 
+    public static void printOddSplitFissionTables(int S, Integer filterK, Integer filterM) {
+        int stateCount = (S + 1) * (S + 2) / 2;
+        SplitFissionCenancestorLikelihoodCore core = new SplitFissionCenancestorLikelihoodCore(stateCount);
+        if (core.S != S) {
+            throw new IllegalArgumentException("Computed S mismatch. Expected " + S + " but got " + core.S);
+        }
+        core.overridableInitialization();
+
+        int[] kByState = new int[stateCount];
+        int[] mByState = new int[stateCount];
+        int[][] varState = new int[S + 1][S + 1];
+        for (int i = 0; i < S + 1; i++) {
+            Arrays.fill(varState[i], -1);
+        }
+        int iState = 0;
+        for (int m = 0; m <= S; m++) {
+            for (int k = 0; k + m <= S; k++) {
+                kByState[iState] = k;
+                mByState[iState] = m;
+                varState[k][m] = iState;
+                iState++;
+            }
+        }
+
+        Integer filterState = null;
+        if (filterK != null && filterM != null) {
+            if (filterK < 0 || filterM < 0 || filterK + filterM > S) {
+                throw new IllegalArgumentException("Invalid (k,m) filter: k=" + filterK + " m=" + filterM);
+            }
+            int idx = 0;
+            for (int m = 0; m <= S; m++) {
+                for (int k = 0; k + m <= S; k++) {
+                    if (k == filterK && m == filterM) {
+                        filterState = idx;
+                        break;
+                    }
+                    idx++;
+                }
+                if (filterState != null) break;
+            }
+        }
+
+        for (int s = 0; s < stateCount; s++) {
+            if (filterState != null && s != filterState) continue;
+            int k = kByState[s];
+            int m = mByState[s];
+            int d = S - k - m;
+            if (S % 2 == 0) {
+                ThreeVHypergeometricDistribution iStateCombs = new ThreeVHypergeometricDistribution(d, k, m, S / 2);
+                int[][] counts = iStateCombs.getCounts();
+                double[] splitPs = iStateCombs.getProbs();
+                double sum = 0.0;
+                System.out.println("State " + s + " (d,k,m)=(" + d + "," + k + "," + m + ")");
+                for (int iFiss = 0; iFiss < counts.length; iFiss++) {
+                    int k0 = counts[iFiss][1] * 2;
+                    int m0 = counts[iFiss][2] * 2;
+                    int k1 = k * 2 - k0;
+                    int m1 = m * 2 - m0;
+                    int s0 = (k0 >= 0 && m0 >= 0 && k0 + m0 <= S) ? varState[k0][m0] : -1;
+                    int s1 = (k1 >= 0 && m1 >= 0 && k1 + m1 <= S) ? varState[k1][m1] : -1;
+                    double p = splitPs[iFiss];
+                    sum += p;
+                    String a;
+                    if (s0 >= 0 && s0 < stateCount) {
+                        int k0s = kByState[s0];
+                        int m0s = mByState[s0];
+                        int d0 = S - k0s - m0s;
+                        a = "A=" + s0 + " (" + d0 + "," + k0 + "," + m0 + ")";
+                    } else {
+                        a = "A=INVALID(" + s0 + ")";
+                    }
+                    String b;
+                    if (s1 >= 0 && s1 < stateCount) {
+                        int k1s = kByState[s1];
+                        int m1s = mByState[s1];
+                        int d1 = S - k1s - m1s;
+                        b = "B=" + s1 + " (" + d1 + "," + k1 + "," + m1 + ")";
+                    } else {
+                        b = "B=INVALID(" + s1 + ")";
+                    }
+                    System.out.printf("  p=%.12g  pSplit=%.12g  %s  %s%n", p, p, a, b);
+                }
+                System.out.printf("  sum(p)=%.15g%n", sum);
+                System.out.println();
+            } else {
+                ThreeVHypergeometricDistribution iStateCombs = new ThreeVHypergeometricDistribution(d, k, m, (int) ceil(S / 2.0));
+                SplitFissionCombinations rawCombs = new SplitFissionCombinations(iStateCombs, false);
+                int[][][] iStateCounts = rawCombs.getCounts();
+                double[] finalPs = rawCombs.getProbs();
+                double[] splitPs = rawCombs.getSplitProbs();
+
+                double sum = 0.0;
+                System.out.println("State " + s + " (d,k,m)=(" + d + "," + k + "," + m + ")");
+                for (int iFiss = 0; iFiss < iStateCounts.length; iFiss++) {
+                    int k0 = iStateCounts[iFiss][0][1];
+                    int m0 = iStateCounts[iFiss][0][2];
+                    int k1 = iStateCounts[iFiss][1][1];
+                    int m1 = iStateCounts[iFiss][1][2];
+                    int s0 = (k0 >= 0 && m0 >= 0 && k0 + m0 <= S) ? varState[k0][m0] : -1;
+                    int s1 = (k1 >= 0 && m1 >= 0 && k1 + m1 <= S) ? varState[k1][m1] : -1;
+                    double p = finalPs[iFiss];
+                    double pSplit = splitPs == null ? Double.NaN : splitPs[iFiss];
+                    sum += p;
+                    String a;
+                    if (s0 >= 0 && s0 < stateCount) {
+                        int k0s = kByState[s0];
+                        int m0s = mByState[s0];
+                        int d0 = S - k0s - m0s;
+                        a = "A=" + s0 + " (" + d0 + "," + k0 + "," + m0 + ")";
+                    } else {
+                        a = "A=INVALID(" + s0 + ")";
+                    }
+                    String b;
+                    if (s1 >= 0 && s1 < stateCount) {
+                        int k1s = kByState[s1];
+                        int m1s = mByState[s1];
+                        int d1 = S - k1s - m1s;
+                        b = "B=" + s1 + " (" + d1 + "," + k1 + "," + m1 + ")";
+                    } else {
+                        b = "B=INVALID(" + s1 + ")";
+                    }
+                    System.out.printf("  p=%.12g  pSplit=%.12g  %s  %s%n", p, pSplit, a, b);
+                }
+                System.out.printf("  sum(p)=%.15g%n", sum);
+                System.out.println();
+            }
+        }
+    }
+
+    public static void main(String[] args) {
+        if (args.length < 1 || args.length == 2 || args.length > 3) {
+            System.out.println("Usage: SplitFissionCenancestorLikelihoodCore <S> [k m]");
+            System.out.println("  If k and m are provided, prints only that parent state.");
+            return;
+        }
+        int S = Integer.parseInt(args[0]);
+        Integer k = null;
+        Integer m = null;
+        if (args.length == 3) {
+            k = Integer.parseInt(args[1]);
+            m = Integer.parseInt(args[2]);
+        }
+        printOddSplitFissionTables(S, k, m);
+    }
+}
