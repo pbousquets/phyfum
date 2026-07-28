@@ -1,0 +1,188 @@
+<?xml version="1.0" standalone="yes"?>
+<beast>
+
+	<!-- A compact runnable example of sampling the crypt-division model. -->
+	<taxa id="taxa">
+		<taxon id="A">
+			<date value="10.0" direction="forwards" units="years"/>
+		</taxon>
+		<taxon id="B">
+			<date value="10.0" direction="forwards" units="years"/>
+		</taxon>
+		<taxon id="C">
+			<date value="10.0" direction="forwards" units="years"/>
+		</taxon>
+	</taxa>
+
+	<afalignment id="alignment">
+		<afsequence>
+			<taxon idref="A"/>
+			0.10,0.40,0.14,0.12
+		</afsequence>
+		<afsequence>
+			<taxon idref="B"/>
+			0.20,0.30,0.13,0.42
+		</afsequence>
+		<afsequence>
+			<taxon idref="C"/>
+			0.60,0.36,0.10,0.62
+		</afsequence>
+		<stemCells>
+			<parameter id="alignment.stemCells" value="2"/>
+		</stemCells>
+	</afalignment>
+
+	<AFsequenceErrorModel id="errorModel">
+		<stemCells>
+			<parameter idref="alignment.stemCells"/>
+		</stemCells>
+		<deltaOffset>
+			<parameter id="errorModel.deltaOffset" value="0.05" lower="0.0" upper="1.0"/>
+		</deltaOffset>
+		<etaOffset>
+			<parameter id="errorModel.etaOffset" value="0.95" lower="0.0" upper="1.0"/>
+		</etaOffset>
+		<kappaScale>
+			<parameter id="errorModel.kappaScale" value="50.0" lower="0.0"/>
+		</kappaScale>
+	</AFsequenceErrorModel>
+
+	<constantSize id="constant" units="years">
+		<populationSize>
+			<parameter id="constant.popSize" value="1.0" lower="0.0"/>
+		</populationSize>
+	</constantSize>
+
+	<coalescentSimulator id="startingTree">
+		<taxa idref="taxa"/>
+		<constantSize idref="constant"/>
+	</coalescentSimulator>
+
+	<treeModel id="treeModel">
+		<coalescentTree idref="startingTree"/>
+		<rootHeight>
+			<parameter id="treeModel.rootHeight"/>
+		</rootHeight>
+		<nodeHeights internalNodes="true">
+			<parameter id="treeModel.internalNodeHeights"/>
+		</nodeHeights>
+	</treeModel>
+
+	<coalescentLikelihood id="coalescent">
+		<model>
+			<constantSize idref="constant"/>
+		</model>
+		<populationTree>
+			<treeModel idref="treeModel"/>
+		</populationTree>
+	</coalescentLikelihood>
+
+	<strictClockCenancestorBranchRates id="branchRates">
+		<rate>
+			<parameter id="clock.rate" value="1.0"/>
+		</rate>
+	</strictClockCenancestorBranchRates>
+
+	<flipflopModel id="flipflopSubstitutionModel" normalize="false">
+		<alignment idref="alignment"/>
+		<stemCells>
+			<parameter idref="alignment.stemCells"/>
+		</stemCells>
+		<mu>
+			<parameter id="flipflop.mu" value="0.05" lower="0.0"/>
+		</mu>
+		<gamma>
+			<parameter id="flipflop.gamma" value="0.05" lower="0.0"/>
+		</gamma>
+		<lambda>
+			<parameter id="flipflop.lambda" value="0.95" lower="0.0"/>
+		</lambda>
+	</flipflopModel>
+
+	<siteModel id="siteModel">
+		<substitutionModel>
+			<flipflopModel idref="flipflopSubstitutionModel"/>
+		</substitutionModel>
+	</siteModel>
+
+	<flipflopCenancestorFrequency id="cenancestorFrequencyModel" methylatedProportion="0.5">
+		<alignment idref="alignment"/>
+		<frequencies>
+			<parameter id="cenancestor.frequencies" value="1.0"/>
+		</frequencies>
+	</flipflopCenancestorFrequency>
+
+	<!--
+		divisionModel mapping:
+		0 = identity, 1 = budding, 2 = fission, 3 = split fission.
+		The selected value applies to every internal node.
+	-->
+	<modelAveragingCenancestorTreeLikelihood id="treeLikelihood"
+			useAmbiguities="false" heightRules="true">
+		<patterns idref="alignment"/>
+		<treeModel idref="treeModel"/>
+		<siteModel idref="siteModel"/>
+		<cenancestorFrequency idref="cenancestorFrequencyModel"/>
+		<tipStatesModel idref="errorModel"/>
+		<cenancestorHeight>
+			<parameter id="luca_height" value="10.0"/>
+		</cenancestorHeight>
+		<cenancestorBranch>
+			<parameter id="luca_branch" value="1.0" lower="0.0" upper="10.0"/>
+		</cenancestorBranch>
+		<divisionModel>
+			<parameter id="divisionModel" value="0" lower="0" upper="3"/>
+		</divisionModel>
+		<strictClockCenancestorBranchRates idref="branchRates"/>
+	</modelAveragingCenancestorTreeLikelihood>
+
+	<operators id="operators" optimizationSchedule="default">
+		<!-- This proposal is uniform on 0..3 and therefore has log Hastings ratio 0. -->
+		<uniformIntegerOperator lower="0" upper="3" weight="3.0">
+			<parameter idref="divisionModel"/>
+		</uniformIntegerOperator>
+	</operators>
+
+	<mcmc id="mcmc" chainLength="10000" autoOptimize="true"
+			operatorAnalysis="modelAveraging.ops">
+		<posterior id="posterior">
+			<prior id="prior">
+				<coalescentLikelihood idref="coalescent"/>
+				<uniformPrior lower="0.0" upper="10.0">
+					<parameter idref="luca_branch"/>
+				</uniformPrior>
+
+				<!-- Relative prior weights: identity, budding, fission, split fission. -->
+				<divisionModelPrior weights="1.0 1.0 1.0 1.0">
+					<parameter idref="divisionModel"/>
+				</divisionModelPrior>
+			</prior>
+			<likelihood id="likelihood">
+				<modelAveragingCenancestorTreeLikelihood idref="treeLikelihood"/>
+			</likelihood>
+		</posterior>
+		<operators idref="operators"/>
+
+		<log id="screenLog" logEvery="1000">
+			<posterior idref="posterior"/>
+			<likelihood idref="likelihood"/>
+			<parameter idref="divisionModel"/>
+		</log>
+
+		<log id="fileLog" logEvery="100" fileName="modelAveraging.log" overwrite="true">
+			<posterior idref="posterior"/>
+			<prior idref="prior"/>
+			<likelihood idref="likelihood"/>
+			<parameter idref="divisionModel"/>
+			<parameter idref="treeModel.rootHeight"/>
+			<parameter idref="luca_height"/>
+			<parameter idref="luca_branch"/>
+		</log>
+	</mcmc>
+
+	<report>
+		<property name="timer">
+			<mcmc idref="mcmc"/>
+		</property>
+	</report>
+</beast>

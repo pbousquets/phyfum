@@ -84,6 +84,32 @@ public class CenancestorTreeLikelihood extends AbstractTreeLikelihood {
                                      boolean forceJavaCore,
                                      boolean forceRescaling,
                                      boolean heightRules) {
+        this(patternList, treeModel, siteModel, branchRateModel, tipStatesModel,
+                cenancestorHeight, cenancestorBranch, cenancestorFrequencyModel, divisionModel,
+                useAmbiguities, allowMissingTaxa, storePartials, forceJavaCore, forceRescaling,
+                heightRules, null, null);
+    }
+
+    /**
+     * Constructor used by subclasses that provide a specialized likelihood core.
+     */
+    protected CenancestorTreeLikelihood(PatternList patternList,
+                                        TreeModel treeModel,
+                                        SiteModel siteModel,
+                                        CenancestorBranchRateModel branchRateModel,
+                                        TipStatesModel tipStatesModel,
+                                        Parameter cenancestorHeight,
+                                        Parameter cenancestorBranch,
+                                        AbstractGeneralFrequencyModel cenancestorFrequencyModel,
+                                        String divisionModel,
+                                        boolean useAmbiguities,
+                                        boolean allowMissingTaxa,
+                                        boolean storePartials,
+                                        boolean forceJavaCore,
+                                        boolean forceRescaling,
+                                        boolean heightRules,
+                                        CenancestorLikelihoodCore suppliedLikelihoodCore,
+                                        String suppliedCoreName) {
 
         super(CenancestorTreeLikelihoodParser.TREE_LIKELIHOOD, patternList, treeModel);
 
@@ -182,7 +208,10 @@ public class CenancestorTreeLikelihood extends AbstractTreeLikelihood {
 
             final DataType dataType = patternList.getDataType();
 
-            if (dataType instanceof dr.evolution.datatype.TwoStates) {
+            if (suppliedLikelihoodCore != null) {
+                coreName = suppliedCoreName;
+                cenancestorlikelihoodCore = suppliedLikelihoodCore;
+            } else if (dataType instanceof dr.evolution.datatype.TwoStates) {
                 coreName = "Java cenancestor binary";
                 cenancestorlikelihoodCore = new GeneralCenancestorLikelihoodCore(patternList.getStateCount());
             } else if (dataType instanceof dr.evolution.datatype.GeneralDataType) {
