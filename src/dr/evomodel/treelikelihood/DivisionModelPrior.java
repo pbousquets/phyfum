@@ -43,7 +43,7 @@ public class DivisionModelPrior extends AbstractModelLikelihood {
         if (divisionModel == null) {
             throw new IllegalArgumentException("divisionModel parameter cannot be null");
         }
-        ModelAveragingCenancestorLikelihoodCore.getDivisionModelIndex(divisionModel);
+        ModelAveragingCenancestorLikelihoodCore.validateDivisionModel(divisionModel);
 
         if (weights == null ||
                 weights.length != ModelAveragingCenancestorLikelihoodCore.MODEL_COUNT) {

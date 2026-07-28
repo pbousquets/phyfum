@@ -92,6 +92,13 @@ public class ModelAveragingCenancestorLikelihoodCore extends GeneralCenancestorL
         return model;
     }
 
+    /**
+     * Validates the dimension and current value of a division-model parameter.
+     */
+    public static void validateDivisionModel(Parameter divisionModel) {
+        getDivisionModelIndex(divisionModel);
+    }
+
     private GeneralCenancestorLikelihoodCore getDivisionCore() {
         return divisionCores[getDivisionModelIndex(divisionModel)];
     }

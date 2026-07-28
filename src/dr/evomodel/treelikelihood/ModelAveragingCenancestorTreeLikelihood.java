@@ -57,7 +57,7 @@ public class ModelAveragingCenancestorTreeLikelihood extends CenancestorTreeLike
                 heightRules, createLikelihoodCore(patternList, divisionModel),
                 "Java cenancestor FlipFlop model averaging");
 
-        ModelAveragingCenancestorLikelihoodCore.getDivisionModelIndex(divisionModel);
+        ModelAveragingCenancestorLikelihoodCore.validateDivisionModel(divisionModel);
         divisionModel.addBounds(new Parameter.DefaultBounds(
                 ModelAveragingCenancestorLikelihoodCore.MODEL_COUNT - 1,
                 ModelAveragingCenancestorLikelihoodCore.IDENTITY, 1));
@@ -87,7 +87,6 @@ public class ModelAveragingCenancestorTreeLikelihood extends CenancestorTreeLike
     protected void handleVariableChangedEvent(Variable variable, int index,
                                               Parameter.ChangeType type) {
         if (variable == divisionModel) {
-            ModelAveragingCenancestorLikelihoodCore.getDivisionModelIndex(divisionModel);
             updateAllNodes();
             fireModelChanged();
         } else {

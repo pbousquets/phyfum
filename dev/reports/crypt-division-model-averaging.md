@@ -100,6 +100,22 @@ tests passed, while
 the source declares package `dr.evomodel.flipflop` but the Ant target requests
 `test.dr.evomodel.flipflop`. This pre-existing unrelated test was not changed.
 
+### Follow-up validation cleanup
+
+After review, discarded calls to `getDivisionModelIndex` were replaced by the
+explicit `validateDivisionModel` method. Validation was removed from the
+division-model variable-change handler because the configured integer operator
+generates only supported states; the handler now only invalidates all nodes and
+fires the model-change event.
+
+The follow-up checks passed:
+
+- `ant compile-all`.
+- The three targeted model-averaging test classes: 10 tests passed.
+- `ant junit_flipflop`: all discoverable tests passed, with the same unrelated
+  `TestSubstitutionModelEmpiricalFrequencies` class-discovery error described
+  above.
+
 ## Deferred validation
 
 Posterior model frequencies have not yet been compared with the existing

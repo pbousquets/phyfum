@@ -70,7 +70,7 @@ public class ModelAveragingCenancestorLikelihoodCoreTest extends TestCase {
     public void testInvalidDivisionModelIsRejected() {
         final Parameter divisionModel = new Parameter.Default(0.5);
         try {
-            ModelAveragingCenancestorLikelihoodCore.getDivisionModelIndex(divisionModel);
+            ModelAveragingCenancestorLikelihoodCore.validateDivisionModel(divisionModel);
             fail("Expected a non-integer divisionModel value to be rejected");
         } catch (IllegalArgumentException expected) {
             assertTrue(expected.getMessage().contains("integer"));
@@ -78,7 +78,7 @@ public class ModelAveragingCenancestorLikelihoodCoreTest extends TestCase {
 
         divisionModel.setParameterValue(0, 4.0);
         try {
-            ModelAveragingCenancestorLikelihoodCore.getDivisionModelIndex(divisionModel);
+            ModelAveragingCenancestorLikelihoodCore.validateDivisionModel(divisionModel);
             fail("Expected an out-of-range divisionModel value to be rejected");
         } catch (IllegalArgumentException expected) {
             assertTrue(expected.getMessage().contains("0 to 3"));
