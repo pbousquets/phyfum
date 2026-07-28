@@ -49,19 +49,22 @@ public class ModelAveragingCenancestorTreeLikelihoodTest extends TestCase {
     }
 
     public void testLikelihoodRestoresAfterRejectedModelChange() throws Exception {
-        final AveragingLikelihood averaging = createAveragingLikelihood(0);
-        final double identityLogLikelihood = averaging.likelihood.getLogLikelihood();
+        for (boolean storePartials : new boolean[]{true, false}) {
+            final AveragingLikelihood averaging =
+                    createAveragingLikelihood(0, storePartials);
+            final double identityLogLikelihood = averaging.likelihood.getLogLikelihood();
 
-        averaging.likelihood.storeModelState();
-        averaging.divisionModel.setParameterValue(0, 1.0);
-        final double buddingLogLikelihood = averaging.likelihood.getLogLikelihood();
-        assertTrue(identityLogLikelihood != buddingLogLikelihood);
+            averaging.likelihood.storeModelState();
+            averaging.divisionModel.setParameterValue(0, 1.0);
+            final double buddingLogLikelihood = averaging.likelihood.getLogLikelihood();
+            assertTrue(identityLogLikelihood != buddingLogLikelihood);
 
-        averaging.likelihood.restoreModelState();
+            averaging.likelihood.restoreModelState();
 
-        assertEquals(0.0, averaging.divisionModel.getParameterValue(0), 0.0);
-        assertEquals(identityLogLikelihood,
-                averaging.likelihood.getLogLikelihood(), 0.0);
+            assertEquals(0.0, averaging.divisionModel.getParameterValue(0), 0.0);
+            assertEquals(identityLogLikelihood,
+                    averaging.likelihood.getLogLikelihood(), 0.0);
+        }
     }
 
     private CenancestorTreeLikelihood createFixedLikelihood(String divisionModel)
@@ -76,6 +79,11 @@ public class ModelAveragingCenancestorTreeLikelihoodTest extends TestCase {
     }
 
     private AveragingLikelihood createAveragingLikelihood(int model) throws Exception {
+        return createAveragingLikelihood(model, true);
+    }
+
+    private AveragingLikelihood createAveragingLikelihood(int model, boolean storePartials)
+            throws Exception {
         final Components components = createComponents();
         final Parameter divisionModel = new Parameter.Default((double) model);
         final ModelAveragingCenancestorTreeLikelihood likelihood =
@@ -84,7 +92,7 @@ public class ModelAveragingCenancestorTreeLikelihoodTest extends TestCase {
                         components.branchRates, components.errorModel,
                         new Parameter.Default("cenancestorHeight", 3.0, 0.0, 100.0),
                         new Parameter.Default("cenancestorBranch", 1.0, 0.0, 100.0), null,
-                        divisionModel, false, false, true, true, false, false);
+                        divisionModel, false, false, storePartials, true, false, false);
         return new AveragingLikelihood(likelihood, divisionModel);
     }
 

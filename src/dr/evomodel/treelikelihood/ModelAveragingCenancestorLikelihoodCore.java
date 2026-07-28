@@ -37,6 +37,8 @@ public class ModelAveragingCenancestorLikelihoodCore extends GeneralCenancestorL
 
     private final Parameter divisionModel;
     private final GeneralCenancestorLikelihoodCore[] divisionCores;
+    private int currentDivisionModel;
+    private int storedDivisionModel;
 
     public ModelAveragingCenancestorLikelihoodCore(int stateCount, Parameter divisionModel) {
         super(stateCount);
@@ -46,6 +48,8 @@ public class ModelAveragingCenancestorLikelihoodCore extends GeneralCenancestorL
         }
 
         this.divisionModel = divisionModel;
+        currentDivisionModel = getDivisionModelIndex(divisionModel);
+        storedDivisionModel = currentDivisionModel;
         divisionCores = new GeneralCenancestorLikelihoodCore[]{
                 new GeneralCenancestorLikelihoodCore(stateCount),
                 new BuddingCenancestorLikelihoodCore(stateCount),
@@ -99,8 +103,35 @@ public class ModelAveragingCenancestorLikelihoodCore extends GeneralCenancestorL
         getDivisionModelIndex(divisionModel);
     }
 
+    /**
+     * Updates the cached pruning core after the division-model parameter changes.
+     */
+    public void updateDivisionModel() {
+        currentDivisionModel = getDivisionModelIndex(divisionModel);
+    }
+
+    void storeDivisionModelState() {
+        storedDivisionModel = currentDivisionModel;
+    }
+
+    void restoreDivisionModelState() {
+        currentDivisionModel = storedDivisionModel;
+    }
+
+    @Override
+    public void storeState() {
+        super.storeState();
+        storeDivisionModelState();
+    }
+
+    @Override
+    public void restoreState() {
+        super.restoreState();
+        restoreDivisionModelState();
+    }
+
     private GeneralCenancestorLikelihoodCore getDivisionCore() {
-        return divisionCores[getDivisionModelIndex(divisionModel)];
+        return divisionCores[currentDivisionModel];
     }
 
     @Override

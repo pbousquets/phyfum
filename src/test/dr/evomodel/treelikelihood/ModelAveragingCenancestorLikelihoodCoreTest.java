@@ -47,7 +47,7 @@ public class ModelAveragingCenancestorLikelihoodCoreTest extends TestCase {
 
     public void testCoreStateRestoresAfterRejectedModelChange() {
         final Parameter divisionModel = new Parameter.Default(0.0);
-        final CenancestorLikelihoodCore core =
+        final ModelAveragingCenancestorLikelihoodCore core =
                 new ModelAveragingCenancestorLikelihoodCore(STATE_COUNT, divisionModel);
 
         initializeCore(core);
@@ -58,12 +58,15 @@ public class ModelAveragingCenancestorLikelihoodCoreTest extends TestCase {
         core.storeState();
 
         divisionModel.setParameterValue(0, 1.0);
+        core.updateDivisionModel();
         core.setNodePartialsForUpdate(PARENT_NODE);
         core.calculatePartials(0, 1, PARENT_NODE);
 
         divisionModel.restoreParameterValues();
         core.restoreState();
 
+        core.setNodePartialsForUpdate(PARENT_NODE);
+        core.calculatePartials(0, 1, PARENT_NODE);
         assertEquals(identityPartials, getPartials(core), TOLERANCE);
     }
 

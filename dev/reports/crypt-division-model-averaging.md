@@ -103,15 +103,23 @@ the source declares package `dr.evomodel.flipflop` but the Ant target requests
 ### Follow-up validation cleanup
 
 After review, discarded calls to `getDivisionModelIndex` were replaced by the
-explicit `validateDivisionModel` method. Validation was removed from the
-division-model variable-change handler because the configured integer operator
-generates only supported states; the handler now only invalidates all nodes and
-fires the model-change event.
+explicit `validateDivisionModel` method. The discarded validation call was
+removed from the division-model variable-change handler.
+
+The selected pruning core is now cached. The handler refreshes that cache once
+when `divisionModel` changes, validating the selector as it reads the new index,
+then invalidates all nodes and fires the model-change event. Individual pruning
+calls no longer read or validate the parameter. The current and stored selector
+values follow the same MCMC store/restore behavior as the core's matrices and
+partials. Because the parent tree likelihood skips core state storage when
+`storePartials` is false, the model-averaging likelihood explicitly stores and
+restores the selector cache in that mode.
 
 The follow-up checks passed:
 
 - `ant compile-all`.
-- The three targeted model-averaging test classes: 10 tests passed.
+- The three targeted model-averaging test classes: 10 tests passed, including
+  selector rejection with both `storePartials` settings.
 - `ant junit_flipflop`: all discoverable tests passed, with the same unrelated
   `TestSubstitutionModelEmpiricalFrequencies` class-discovery error described
   above.

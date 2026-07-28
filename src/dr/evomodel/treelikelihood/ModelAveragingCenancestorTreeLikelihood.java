@@ -35,6 +35,8 @@ import dr.inference.model.Variable;
 public class ModelAveragingCenancestorTreeLikelihood extends CenancestorTreeLikelihood {
 
     private final Parameter divisionModel;
+    private final ModelAveragingCenancestorLikelihoodCore modelAveragingLikelihoodCore;
+    private final boolean storePartials;
 
     public ModelAveragingCenancestorTreeLikelihood(PatternList patternList,
                                                    TreeModel treeModel,
@@ -62,6 +64,9 @@ public class ModelAveragingCenancestorTreeLikelihood extends CenancestorTreeLike
                 ModelAveragingCenancestorLikelihoodCore.MODEL_COUNT - 1,
                 ModelAveragingCenancestorLikelihoodCore.IDENTITY, 1));
         this.divisionModel = divisionModel;
+        this.modelAveragingLikelihoodCore =
+                (ModelAveragingCenancestorLikelihoodCore) cenancestorlikelihoodCore;
+        this.storePartials = storePartials;
         addVariable(divisionModel);
     }
 
@@ -87,10 +92,27 @@ public class ModelAveragingCenancestorTreeLikelihood extends CenancestorTreeLike
     protected void handleVariableChangedEvent(Variable variable, int index,
                                               Parameter.ChangeType type) {
         if (variable == divisionModel) {
+            modelAveragingLikelihoodCore.updateDivisionModel();
             updateAllNodes();
             fireModelChanged();
         } else {
             super.handleVariableChangedEvent(variable, index, type);
+        }
+    }
+
+    @Override
+    protected void storeState() {
+        if (!storePartials) {
+            modelAveragingLikelihoodCore.storeDivisionModelState();
+        }
+        super.storeState();
+    }
+
+    @Override
+    protected void restoreState() {
+        super.restoreState();
+        if (!storePartials) {
+            modelAveragingLikelihoodCore.restoreDivisionModelState();
         }
     }
 }
