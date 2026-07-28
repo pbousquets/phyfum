@@ -39,7 +39,7 @@ public class FissionCenancestorLikelihoodCore extends GeneralCenancestorLikeliho
     protected int S;
     protected int stateCount;
     protected double [][] pFiss; //[parentalState][fission] probability
-    protected int [][][] combFiss;//[parentalState]daughter][fission] state
+    protected int [][][] combFiss;//[parentalState][daughter][fission] state
 
     //Vars for calculations so that we are not allocating memory all the time
     protected double [] pLA,pLB;
