@@ -110,10 +110,22 @@ public class ModelAveragingCenancestorLikelihoodCore extends GeneralCenancestorL
     }
 
     /**
-     * Updates the cached pruning core after the division-model parameter changes.
+     * Updates the cached pruning core when the proposed division model differs
+     * from the current model.
+     *
+     * @return true if the division model changed
      */
-    public void updateDivisionModel() {
-        currentDivisionModel = getDivisionModelIndex(divisionModel);
+    public boolean isUpdatingDivisionModel() {
+        final int proposedDivisionModel = getDivisionModelIndex(divisionModel);
+
+        // Parameter.setParameterValue stores the proposal before firing its
+        // listener; the cached value still identifies the pre-proposal model.
+        if (proposedDivisionModel == currentDivisionModel) {
+            return false;
+        }
+
+        currentDivisionModel = proposedDivisionModel;
+        return true;
     }
 
     void storeDivisionModelState() {

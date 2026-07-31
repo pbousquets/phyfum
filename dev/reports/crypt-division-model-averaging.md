@@ -115,10 +115,14 @@ partials. Because the parent tree likelihood skips core state storage when
 `storePartials` is false, the model-averaging likelihood explicitly stores and
 restores the selector cache in that mode.
 
+The handler compares the proposed selector with the cached current selector.
+When `uniformIntegerOperator` proposes the existing category, the cache and node
+flags are left unchanged, avoiding a redundant full-tree recalculation.
+
 The follow-up checks passed:
 
 - `ant compile-all`.
-- The three targeted model-averaging test classes: 10 tests passed, including
+- The three targeted model-averaging test classes: 11 tests passed, including
   selector rejection with both `storePartials` settings.
 - `ant junit_flipflop`: all discoverable tests passed, with the same unrelated
   `TestSubstitutionModelEmpiricalFrequencies` class-discovery error described

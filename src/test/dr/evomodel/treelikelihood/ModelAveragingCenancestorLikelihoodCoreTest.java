@@ -58,7 +58,7 @@ public class ModelAveragingCenancestorLikelihoodCoreTest extends TestCase {
         core.storeState();
 
         divisionModel.setParameterValue(0, 1.0);
-        core.updateDivisionModel();
+        assertTrue(core.isUpdatingDivisionModel());
         core.setNodePartialsForUpdate(PARENT_NODE);
         core.calculatePartials(0, 1, PARENT_NODE);
 
@@ -68,6 +68,18 @@ public class ModelAveragingCenancestorLikelihoodCoreTest extends TestCase {
         core.setNodePartialsForUpdate(PARENT_NODE);
         core.calculatePartials(0, 1, PARENT_NODE);
         assertEquals(identityPartials, getPartials(core), TOLERANCE);
+    }
+
+    public void testDivisionModelUpdateDetection() {
+        final Parameter divisionModel = new Parameter.Default(0.0);
+        final ModelAveragingCenancestorLikelihoodCore core =
+                new ModelAveragingCenancestorLikelihoodCore(STATE_COUNT, divisionModel);
+
+        assertFalse(core.isUpdatingDivisionModel());
+
+        divisionModel.setParameterValue(0, 1.0);
+        assertTrue(core.isUpdatingDivisionModel());
+        assertFalse(core.isUpdatingDivisionModel());
     }
 
     public void testInvalidDivisionModelIsRejected() {

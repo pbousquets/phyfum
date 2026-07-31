@@ -92,9 +92,10 @@ public class ModelAveragingCenancestorTreeLikelihood extends CenancestorTreeLike
     protected void handleVariableChangedEvent(Variable variable, int index,
                                               Parameter.ChangeType type) {
         if (variable == divisionModel) {
-            modelAveragingLikelihoodCore.updateDivisionModel();
-            updateAllNodes();
-            fireModelChanged();
+            if (modelAveragingLikelihoodCore.isUpdatingDivisionModel()) {
+                updateAllNodes();
+                fireModelChanged();
+            }
         } else {
             super.handleVariableChangedEvent(variable, index, type);
         }
