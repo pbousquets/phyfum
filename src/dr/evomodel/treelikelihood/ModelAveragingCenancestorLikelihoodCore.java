@@ -36,6 +36,10 @@ public class ModelAveragingCenancestorLikelihoodCore extends GeneralCenancestorL
     public static final int MODEL_COUNT = 4;
 
     private final Parameter divisionModel;
+
+    // These cores are algorithm delegates, not BEAST Models. They are not
+    // registered with the model graph, so they have no dirty flags and receive
+    // no model or variable listener events.
     private final GeneralCenancestorLikelihoodCore[] divisionCores;
     private int currentDivisionModel;
     private int storedDivisionModel;
@@ -62,8 +66,10 @@ public class ModelAveragingCenancestorLikelihoodCore extends GeneralCenancestorL
     public void initialize(int nodeCount, int patternCount, int matrixCount, boolean integrateCategories) {
         super.initialize(nodeCount, patternCount, matrixCount, integrateCategories);
 
-        // The delegates use these dimensions in their pruning loops, but do not
-        // need their own partial or matrix buffers.
+        // Do not call initialize() on the delegates: matrices, partials, states,
+        // and their current/stored index arrays must remain null. The delegates
+        // use the buffers owned by this core, which are passed into their
+        // protected pruning methods, and need only these loop dimensions.
         for (GeneralCenancestorLikelihoodCore core : divisionCores) {
             core.nodeCount = nodeCount;
             core.patternCount = patternCount;
