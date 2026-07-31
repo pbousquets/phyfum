@@ -1,28 +1,154 @@
 # Crypt-division model averaging
 
-Date: 2026-07-28
+Created: 2026-07-28
 
-## Implementation
+Last updated: 2026-07-31
 
-PHYFUM can now sample one crypt-division model within the MCMC. The scalar
-`divisionModel` parameter applies to every internal node and uses this mapping:
+## Purpose and model definition
 
-| Value | Model |
-|---:|---|
-| 0 | identity |
-| 1 | budding |
-| 2 | fission |
-| 3 | split fission |
+PHYFUM can sample the crypt-division model jointly with its other MCMC
+parameters instead of running four independent analyses and comparing them
+afterward. One global scalar `divisionModel` parameter controls the pruning
+calculation at every internal node:
 
-`ModelAveragingCenancestorTreeLikelihood` extends the existing cenancestor tree
-likelihood. Its core owns one set of partial and matrix buffers and delegates
-the pruning calculations to the selected existing likelihood core. A selector
-change marks every node for recalculation. BEAST's normal parameter and
-likelihood-core store/restore mechanisms therefore restore the previous
-partials after a rejected model proposal.
+| Value | Model | Pruning implementation |
+|---:|---|---|
+| 0 | identity | `GeneralCenancestorLikelihoodCore` |
+| 1 | budding | `BuddingCenancestorLikelihoodCore` |
+| 2 | fission | `FissionCenancestorLikelihoodCore` |
+| 3 | split fission | `SplitFissionCenancestorLikelihoodCore` |
 
-The existing `cenancestorTreeLikelihood` element and its fixed
-`divisionModel` attribute are unchanged.
+The selector is global, not node-specific. The implementation is Java-only and
+currently accepts `AFsequence` data. Existing fixed-model
+`cenancestorTreeLikelihood` XML remains compatible and unchanged.
+
+## Source map
+
+| Responsibility | File |
+|---|---|
+| Tree-likelihood model and selector events | `src/dr/evomodel/treelikelihood/ModelAveragingCenancestorTreeLikelihood.java` |
+| Shared-buffer likelihood core and pruning dispatch | `src/dr/evomodel/treelikelihood/ModelAveragingCenancestorLikelihoodCore.java` |
+| Categorical prior | `src/dr/evomodel/treelikelihood/DivisionModelPrior.java` |
+| Tree-likelihood XML parser | `src/dr/evomodelxml/treelikelihood/ModelAveragingCenancestorTreeLikelihoodParser.java` |
+| Prior XML parser | `src/dr/evomodelxml/treelikelihood/DivisionModelPriorParser.java` |
+| Parser registration | `src/dr/app/beast/release_parsers.properties` |
+| Runnable example | `examples/release/flipflop/modelAveraging.xml` |
+| Core equivalence and state tests | `src/test/dr/evomodel/treelikelihood/ModelAveragingCenancestorLikelihoodCoreTest.java` |
+| Complete likelihood tests | `src/test/dr/evomodel/treelikelihood/ModelAveragingCenancestorTreeLikelihoodTest.java` |
+| Prior and operator tests | `src/test/dr/evomodel/treelikelihood/DivisionModelPriorTest.java` |
+
+## Architecture and buffer ownership
+
+`ModelAveragingCenancestorTreeLikelihood` extends `CenancestorTreeLikelihood`
+and supplies a `ModelAveragingCenancestorLikelihoodCore`. The model-averaging
+core extends `GeneralCenancestorLikelihoodCore`, so the existing traversal,
+cenancestor handling, scaling, and double-buffer state machinery remain in use.
+
+There is exactly one set of tree-sized likelihood-core storage:
+
+- matrices;
+- partials;
+- tip states;
+- scaling factors;
+- current and stored matrix/partial buffer indices.
+
+These arrays belong to `ModelAveragingCenancestorLikelihoodCore` and are
+allocated by its call to `super.initialize(...)`.
+
+The four objects in `divisionCores` are algorithm delegates only. Their
+`initialize(...)` methods are deliberately not called, so their inherited
+matrices, partials, states, scaling buffers, and current/stored buffer-index
+arrays remain `null`. They receive the model-averaging core's arrays as
+arguments to their protected pruning methods. Only their loop dimensions and
+model-specific lookup/scratch data are initialized.
+
+The delegates are likelihood-core objects, not BEAST `Model` objects. They are
+not registered with `addModel(...)` or `addVariable(...)`, have no dirty flags,
+and receive no model or variable listener events. A selector change marks the
+single tree likelihood's node flags; it does not mark four independent cores.
+During traversal, only the cached selected delegate executes.
+
+Model-specific lookup tables are initialized once at setup so every model is
+ready when first proposed. This includes budding probabilities and the fission
+and split-fission combination tables. These tables are distinct biological
+data and would still be required by a fused implementation; they are not
+duplicate tree likelihood buffers.
+
+The pruning path is:
+
+```text
+ModelAveragingCenancestorLikelihoodCore matrices/partials
+        -> inherited calculatePartials(...)
+        -> overridden pruning dispatch
+        -> cached selected delegate's protected pruning method
+```
+
+Delegation preserves the fixed cores' numerical calculations and their current
+`UnsupportedOperationException` behavior for unsupported pruning variants.
+
+## Selector validation and cached dispatch
+
+The constructor requires a scalar selector, validates that its current value
+is an exact integer from 0 through 3, and attaches bounds `[0,3]`. Bounds alone
+do not enforce integrality because BEAST's `Parameter` stores doubles; the
+configured integer operator supplies valid MCMC proposals.
+
+`getDivisionModelIndex(...)` both validates and returns the selector.
+`validateDivisionModel(...)` is used where only validation is intended, making
+discarded-return call sites explicit.
+
+Pruning does not read the parameter for every node. The core caches:
+
+```text
+currentDivisionModel  selected core for the proposed/current state
+storedDivisionModel   selected core at the last MCMC store point
+```
+
+`getDivisionCore()` indexes `divisionCores` with `currentDivisionModel`, so
+node-level pruning performs only a cached array lookup.
+
+## MCMC proposal, acceptance, and rejection lifecycle
+
+The order of operations is important:
+
+1. Before an operator runs, BEAST calls `storeModelState()`.
+2. Core `storeState()` stores matrix/partial buffer indices and copies
+   `currentDivisionModel` into `storedDivisionModel`.
+3. `uniformIntegerOperator` calls `Parameter.setParameterValue(...)`.
+4. The parameter writes the proposed value before firing its listener.
+5. `isUpdatingDivisionModel()` therefore reads the new proposal with
+   `getDivisionModelIndex(...)`, while `currentDivisionModel` still contains
+   the pre-proposal model.
+6. If the two models differ, the cache changes to the proposal and every tree
+   node is marked for recalculation under that model.
+
+If the proposal is accepted, `currentDivisionModel` remains the selected model.
+The next MCMC store operation refreshes `storedDivisionModel`.
+
+If the proposal is rejected, BEAST restores the parameter before restoring the
+tree likelihood's additional state. The core then restores
+`currentDivisionModel = storedDivisionModel` together with its stored
+matrix/partial buffer indices. A forced post-restore pruning test verifies that
+the restored cache selects the original model, rather than merely observing
+previously stored partial values.
+
+`CenancestorTreeLikelihood` normally invokes core `storeState()` and
+`restoreState()` only when `storePartials=true`. When `storePartials=false`, the
+model-averaging tree likelihood explicitly stores and restores the selector
+cache; the parent likelihood marks nodes for recalculation as usual. Both modes
+are covered by rejection tests.
+
+## Avoiding unnecessary self-proposal recalculation
+
+BEAST's existing `uniformIntegerOperator` samples uniformly over all four
+categories, including the current value. This is a symmetric proposal with log
+Hastings ratio `0.0`.
+
+`isUpdatingDivisionModel()` compares the proposed selector with the cached
+current selector. If they are equal, it returns `false` without changing the
+cache. The tree-likelihood handler then leaves all node flags unchanged, so the
+MCMC iteration represents the same state without repeating a full-tree pruning
+calculation. The proposal distribution and Hastings ratio are unchanged.
 
 ## XML interface
 
@@ -46,11 +172,14 @@ The selector is operated on with BEAST's existing uniform integer operator:
 </uniformIntegerOperator>
 ```
 
-This proposal is symmetric over the four categories, including a possible
-self-transition, so its log Hastings ratio is `0.0`.
+The selector should be included in an output log so posterior model
+probabilities can be estimated from its sampled frequencies.
 
-The categorical model prior is a separate component and belongs explicitly in
-the MCMC `<prior>` section:
+## Division-model prior
+
+The categorical prior is deliberately separate from the tree likelihood so
+tree-likelihood values remain comparable with fixed-model runs. It must be
+placed explicitly in the MCMC `<prior>` section:
 
 ```xml
 <prior id="prior">
@@ -61,29 +190,42 @@ the MCMC `<prior>` section:
 </prior>
 ```
 
-The values are fixed relative weights in identity, budding, fission, and split
-fission order. They are normalized internally. Omitting `weights` gives equal
-prior probability. A zero weight excludes a model; negative, non-finite,
-wrong-length, and all-zero weight vectors are rejected.
+Weights are fixed relative weights in identity, budding, fission, and split
+fission order and are normalized internally. Omitting `weights` gives equal
+prior probabilities. A zero weight excludes a model. Negative, non-finite,
+wrong-length, and all-zero vectors are rejected.
 
-A compact runnable configuration is provided in
-`examples/release/flipflop/modelAveraging.xml`.
+## Maintenance invariants
+
+Future changes should preserve the following:
+
+- Do not call `initialize(...)` on objects in `divisionCores`; doing so would
+  allocate redundant tree-sized buffers.
+- Keep `divisionCores` in exactly the same order as the public numeric mapping
+  and prior weights.
+- Update `currentDivisionModel` once in the selector listener, never during
+  every node-level pruning call.
+- Store and restore the cached selector for both `storePartials` modes.
+- A real selector change must invalidate all nodes because shared partials were
+  calculated under the previous model.
+- A same-selector proposal must not invalidate nodes.
+- Preserve fixed-core behavior, including unsupported pruning variants.
+- Adding another model requires updating `MODEL_COUNT`, numeric constants,
+  delegate construction, prior validation/documentation, XML comments, and
+  equivalence tests.
 
 ## Verification
 
 The following checks passed:
 
-- Clean Java compilation with `ant compile-all`.
-- Three core tests comparing every dynamic pruning result with its fixed core,
-  plus core store/restore and invalid-selector checks.
-- Two complete tree-likelihood tests:
-  - all four selector values reproduce the corresponding fixed-model log
-    likelihood to `1E-12`;
-  - a proposed model change restores the original selector and likelihood
-    exactly after rejection.
+- `ant compile-all`.
+- Four core tests covering all fixed-core equivalence comparisons, cached
+  update detection, invalid selectors, and forced pruning after cache restore.
+- Two complete tree-likelihood tests covering all four fixed likelihoods and
+  proposal rejection with both `storePartials=true` and `false`.
 - Five prior/operator tests covering equal and unequal weights, zero weights,
   invalid weights, integer support, and the zero Hastings ratio.
-- A 10,000-state smoke run with:
+- An initial 10,000-state smoke run with:
 
   ```text
   dr.app.beast.BeastMain -beagle_off -overwrite -seed 12345 \
@@ -94,39 +236,11 @@ The following checks passed:
   log. The division-model operator made 9,900 proposals with acceptance
   probability 0.7921.
 
-The existing `ant junit_flipflop` target retained its baseline result: eight
-tests passed, while
-`TestSubstitutionModelEmpiricalFrequencies` could not be discovered because
-the source declares package `dr.evomodel.flipflop` but the Ant target requests
+The existing `ant junit_flipflop` target retained its baseline result: all
+discoverable tests pass, while `TestSubstitutionModelEmpiricalFrequencies`
+cannot be discovered because the source declares package
+`dr.evomodel.flipflop` but the Ant target requests
 `test.dr.evomodel.flipflop`. This pre-existing unrelated test was not changed.
-
-### Follow-up validation cleanup
-
-After review, discarded calls to `getDivisionModelIndex` were replaced by the
-explicit `validateDivisionModel` method. The discarded validation call was
-removed from the division-model variable-change handler.
-
-The selected pruning core is now cached. The handler refreshes that cache once
-when `divisionModel` changes, validating the selector as it reads the new index,
-then invalidates all nodes and fires the model-change event. Individual pruning
-calls no longer read or validate the parameter. The current and stored selector
-values follow the same MCMC store/restore behavior as the core's matrices and
-partials. Because the parent tree likelihood skips core state storage when
-`storePartials` is false, the model-averaging likelihood explicitly stores and
-restores the selector cache in that mode.
-
-The handler compares the proposed selector with the cached current selector.
-When `uniformIntegerOperator` proposes the existing category, the cache and node
-flags are left unchanged, avoiding a redundant full-tree recalculation.
-
-The follow-up checks passed:
-
-- `ant compile-all`.
-- The three targeted model-averaging test classes: 11 tests passed, including
-  selector rejection with both `storePartials` settings.
-- `ant junit_flipflop`: all discoverable tests passed, with the same unrelated
-  `TestSubstitutionModelEmpiricalFrequencies` class-discovery error described
-  above.
 
 ## Deferred validation
 
